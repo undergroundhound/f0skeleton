@@ -58,6 +58,9 @@
 #include "button.h"
 #include "p_msg.h"
 #include "bi_led.h"
+#include "device_controller.h"
+
+
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -81,6 +84,8 @@ LED *GstatusLed;
 BiLED *statusLED;
 
 Button *buttonLaunch;
+
+DeviceController deviceController = DeviceController();
 
 static uint8_t deviceAddr[4] =
 { 0x3E, 0x7C, 0x8D, 0x2E };
@@ -150,23 +155,9 @@ void buttonIrq()
     buttonLaunch->irq();
 }
 
-volatile uint8_t shortPress = 0;
-volatile uint8_t longPress = 0;
-void buttonPress(uint8_t state)
+void buttonPress(uint8_t type)
 {
-    switch (state) {
-        case 1:
-            printf(": ");
-            break;
-        case 2:
-            shortPress = 1;
-            break;
-        case 3:
-            longPress = 1;
-            break;
-        default:
-            break;
-    }
+    deviceController.buttonCB(type);
 }
 
 int main(void)
@@ -222,8 +213,8 @@ int main(void)
     else
         printf(RED("Fail\n"));
 
-
     nodeInterface = new NodeInterface(&nrf);
+
     {
         sNvm_t nvm;
         mNVM->get(&nvm);
@@ -232,108 +223,27 @@ int main(void)
             printf(GREEN("OK\n"));
         else
             printf(RED("Fail\n"));
-
     }
-
 
     printId();
     printChannel();
     printAddr();
     nodeInterface->listen();
 
-    PrintInfo("Device Role");
+    deviceController.init(nodeInterface, statusLED);
 
-    if(nodeInterface->getRole() == NODE_ROLE_MASTER)
-    {
-        printf(CYAN("Master\n"));
-        nodeInterface->pingNodes(1, MAX_NODES);
-
-        uint8_t nodes[MAX_NODES];
-        uint8_t nodeCount = nodeInterface->getNodes(nodes);
-        PrintInfo("# of Nodes");
-        printf("%02d\n", nodeCount);
-        for(uint8_t idx = 0; idx < nodeCount; idx++)
-        {
-            PrintInfo("Node");
-            printf("%d\n", nodes[idx]);
-        }
-
-    }
-    else
-    {
-        printf(CYAN("Slave\n"));
-        nodeInterface->listen();
-    }
-
-//    GstatusLed->setFlash(LED_HEARTBEAT);
     statusLED->setFlasher(BILED_SLOW_FUCKAROUND);
 
-    uint8_t myid = getId();
-    uint8_t data[4];
-    uint8_t armed = 0;
 
 
-    printf("siezeof p_msg: %d\n", sizeof(sPmsg_t));
+
     while (1)
     {
-        nodeInterface->run();
+
         statusLED->run();
+        buttonLaunch->run();
+        deviceController.run();
         terminal_run();
-
-        if(!myid)    //ifmaster
-        {
-            static uint8_t fireCount = 0;
-            buttonLaunch->run();
-            if(longPress)
-            {
-                longPress = 0;
-
-                sPmsg_t msg;
-                msg.type = PMSG_TYPE_SET;
-                msg.tag = PMSG_TAG_ARM;
-
-                printf("armed: %d\n", armed);
-                if(!armed)
-                {
-                    RstatusLed->setFlash(LED_FAST_FLASH);
-                    GstatusLed->setFlash(LED_OFF);
-                    fireCount = 0;
-                    armed = 1;
-                    printf("armed\n");
-                    msg.data[0] = 1;
-                    msg.data[1] = 1;
-                    memcpy(data, &msg, 4);
-                    nodeInterface->sendToNodes(data);
-                }
-                else
-                {
-                    RstatusLed->setFlash(LED_OFF);
-                    GstatusLed->setFlash(LED_HEARTBEAT);
-                    armed = 0;
-                    printf("!armed\n");
-                    msg.data[0] = 0;
-                    msg.data[1] = 0;
-                    memcpy(data, &msg, 4);
-                    nodeInterface->sendToNodes(data);
-                }
-            }
-
-            if(shortPress)
-            {
-
-                shortPress = 0;
-                if(armed)
-                {
-                    sPmsg_t msg;
-                    msg.type = PMSG_TYPE_SET;
-                    msg.tag = PMSG_TAG_FIRE;
-                    msg.data[0] = 0;
-                    msg.data[1] = fireCount++;
-                    memcpy(data, &msg, 4);
-                    nodeInterface->sendToNodes(data);
-                }
-            }
-        }
     }
 }
 
