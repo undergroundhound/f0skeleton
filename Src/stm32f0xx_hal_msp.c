@@ -133,6 +133,44 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
 }
 /* USER CODE END 1 */
 
+void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
+{
+
+    printf("kom hier\n");
+  GPIO_InitTypeDef GPIO_InitStruct;
+  if(hadc->Instance==ADC1)
+  {
+    /* Peripheral clock enable */
+    __HAL_RCC_ADC1_CLK_ENABLE();
+
+    /**ADC GPIO Configuration
+    PA4     ------> ADC_IN4
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_4;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  }
+
+}
+
+void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
+{
+
+  if(hadc->Instance==ADC1)
+  {
+    /* Peripheral clock disable */
+    __HAL_RCC_ADC1_CLK_DISABLE();
+
+    /**ADC GPIO Configuration
+    PA4     ------> ADC_IN4
+    */
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_4);
+  }
+
+}
+
 /**
   * @brief  EXTI line detection callbacks.
   * @param  GPIO_Pin: Specifies the pins connected to the EXTI line.

@@ -40,16 +40,17 @@ public:
     eNodeRoles_t getRole();
 
     void listen();
-    void dataAvailable();
+    void dataAvailable(bool state);
 
     HAL_StatusTypeDef pingNode(uint8_t *addr);
     HAL_StatusTypeDef pingNodes(uint8_t startAddr, uint8_t endAddr);
     uint8_t getNodes(uint8_t *nodes);
 
-    HAL_StatusTypeDef sendToNode(uint8_t *nodeAddr, uint8_t *data);
+    HAL_StatusTypeDef sendToNode(uint8_t nodeId, uint8_t *data);
     HAL_StatusTypeDef sendToNodes(uint8_t *data);
+    HAL_StatusTypeDef sendToMaster(uint8_t *data);
 
-    void run();
+    uint8_t runRx(uint8_t *data);
 };
 
 #endif /* SRC_NRF_COMMS_H_ */

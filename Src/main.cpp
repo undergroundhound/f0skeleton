@@ -59,8 +59,7 @@
 #include "p_msg.h"
 #include "bi_led.h"
 #include "device_controller.h"
-
-
+#include "adc.h"
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -86,6 +85,8 @@ BiLED *statusLED;
 Button *buttonLaunch;
 
 DeviceController deviceController = DeviceController();
+
+cADC *adc;
 
 static uint8_t deviceAddr[4] =
 { 0x3E, 0x7C, 0x8D, 0x2E };
@@ -147,7 +148,8 @@ void printChannel()
 
 void nrfIrq(void)
 {
-    nodeInterface->dataAvailable();
+    if(nrf.dataReady())
+        nodeInterface->dataAvailable(true);
 }
 
 void buttonIrq()
@@ -155,9 +157,9 @@ void buttonIrq()
     buttonLaunch->irq();
 }
 
-void buttonPress(uint8_t type)
+void buttonPress(uint8_t state)
 {
-    deviceController.buttonCB(type);
+    deviceController.buttonCB(state);
 }
 
 int main(void)
@@ -181,8 +183,8 @@ int main(void)
         printf(RED("Fail\n"));
 
     /* Initialize the LEDs */
-    RstatusLed = new LED(GPIOA, GPIO_PIN_1);
-    GstatusLed = new LED(GPIOA, GPIO_PIN_0);
+    RstatusLed = new LED(GPIOA, GPIO_PIN_0);
+    GstatusLed = new LED(GPIOA, GPIO_PIN_1);
     statusLED = new BiLED(RstatusLed, GstatusLed);
 
     csn = new cOutput(GPIOB, GPIO_PIN_10);
@@ -234,12 +236,14 @@ int main(void)
 
     statusLED->setFlasher(BILED_SLOW_FUCKAROUND);
 
-
+    adc = new cADC();
+    adc->init();
+    nrf.powerUpRx();
+    printf("adc [0]: %d\n", adc->sampleChannel(4));
 
 
     while (1)
     {
-
         statusLED->run();
         buttonLaunch->run();
         deviceController.run();
@@ -365,6 +369,7 @@ sTermEntry_t addrEntry =
 
 void SendPacket(uint8_t argc, char **argv)
 {
+
     uint8_t data[4];
     memset(data, 0x00, 4);
 
@@ -380,7 +385,7 @@ void SendPacket(uint8_t argc, char **argv)
 
 }
 sTermEntry_t sendEntry =
-{ "s", "Send packet", SendPacket };
+{ "gs", "Get and Set", SendPacket };
 
 /**
  * @brief  This function is executed in case of error occurrence.

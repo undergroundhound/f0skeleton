@@ -17,7 +17,14 @@ class RoleMaster : public Role
     volatile uint8_t shortPress = 0;
     volatile uint8_t longPress = 0;
 
+    uint8_t rxData[4];
+    bool mRxAvailable;
+
     void armSlaves(uint8_t armed);
+
+    void getRegister(uint8_t slave, uint8_t reg, uint8_t *value);
+    void setRegister(uint8_t slave, uint8_t reg, uint8_t value);
+
 
 public:
     RoleMaster(BiLED *led, NodeInterface *nodeInterface);

@@ -23,30 +23,31 @@ void DeviceController::init(NodeInterface *nodeInterface, BiLED *led)
 
     if(nodeInterface->getRole() == NODE_ROLE_MASTER)
     {
-        mRole = new RoleMaster(led, nodeInterface);
         printf(CYAN("Master\n"));
+        mRole = new RoleMaster(led, nodeInterface);
 
     }
     else
     {
-        mRole = new RoleSlave(led, nodeInterface);
         printf(CYAN("Slave\n"));
+        mRole = new RoleSlave(led, nodeInterface);
         nodeInterface->listen();
     }
 }
 
-void DeviceController::buttonCB(uint8_t type)
+void DeviceController::buttonCB(uint8_t state)
 {
     if(!mRole)
         return;
 
-    mRole->buttonCallback(type);
+    mRole->buttonCallback(state);
 }
 
 void DeviceController::run()
 {
     if(!mRole)
         return;
+
 
     mRole->run();
 }

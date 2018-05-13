@@ -23,6 +23,8 @@ BUILD_DIR = build
 # C sources
 C_SOURCES =  \
 Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal.c \
+Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_adc.c \
+Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_adc_ex.c \
 Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_cortex.c \
 Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_dma.c \
 Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_gpio.c \
@@ -54,7 +56,7 @@ Drivers/BSP/nrf24L01/radioPinFunctions.c
 CXX_SOURCES =  \
 $(wildcard Src/*.cpp) \
 Drivers/BSP/Utils/Src/output.cpp \
-Drivers/BSP/Utils/Src/spi.cpp  
+Drivers/BSP/Utils/Src/spi.cpp  \
 #$(wildcard Drivers/BSP/Utils/Src/*.cpp)
 
 # ASM sources

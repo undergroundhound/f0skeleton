@@ -57,9 +57,9 @@ void NodeInterface::listen()
     mNRF->powerUpRx();
 }
 
-void NodeInterface::dataAvailable()
+void NodeInterface::dataAvailable(bool state)
 {
-    mDataAvailable = true;
+    mDataAvailable = state;
 }
 
 HAL_StatusTypeDef NodeInterface::pingNode(uint8_t *addr)
@@ -110,14 +110,22 @@ HAL_StatusTypeDef NodeInterface::pingNodes(uint8_t startAddr, uint8_t endAddr)
     return HAL_OK;
 }
 
-HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t *nodeAddr, uint8_t *data)
+HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t nodeId, uint8_t *data)
 {
+    uint8_t devAddr[5];
+    memcpy(devAddr, deviceAddr, 4);
+    devAddr[4] = nodeId;
+
+    mNRF->powerUpTx();
     //set payload size to zero
-    mNRF->txAddress(nodeAddr);
+    mNRF->txAddress(devAddr);
 
     mNRF->send(data);
-    uint32_t timeOut = HAL_GetTick() + 100;
+    uint32_t timeOut = HAL_GetTick() + 200;
     while(mNRF->isSending() && (timeOut > HAL_GetTick()));
+
+    mNRF->powerUpRx();
+    mDataAvailable = false;
 
     if(timeOut < HAL_GetTick())
         return HAL_TIMEOUT;
@@ -134,14 +142,9 @@ HAL_StatusTypeDef NodeInterface::sendToNodes(uint8_t *data)
     if(mId)
         return HAL_ERROR;
 
-    uint8_t devAddr[5];
-    memcpy(devAddr, deviceAddr, 4);
-
     for(uint8_t idx = 0; idx < mNodeCount; idx++)
     {
-        devAddr[4] = mNodes[idx];
-
-        HAL_StatusTypeDef status = sendToNode(devAddr, data);
+        HAL_StatusTypeDef status = sendToNode(mNodes[idx], data);
         if(status == HAL_TIMEOUT)
             return HAL_TIMEOUT;
     }
@@ -149,6 +152,14 @@ HAL_StatusTypeDef NodeInterface::sendToNodes(uint8_t *data)
     return HAL_OK;
 }
 
+HAL_StatusTypeDef NodeInterface::sendToMaster(uint8_t *data)
+{
+    //if master return
+    if(!mId)
+        return HAL_ERROR;
+
+    return sendToNode(0, data);
+}
 
 uint8_t NodeInterface::getNodes(uint8_t *nodes)
 {
@@ -157,19 +168,13 @@ uint8_t NodeInterface::getNodes(uint8_t *nodes)
     return mNodeCount;
 }
 
-void NodeInterface::run()
+uint8_t NodeInterface::runRx(uint8_t *data)
 {
     if (mDataAvailable)
     {
         mDataAvailable = false;
-        uint8_t data[mPayLoadLen];
-        if (mNRF->dataReady())
-        {
-            mNRF->getData(data);
-            printf("rx:");
-            for (uint8_t idx = 0; idx < 4; idx++)
-                printf(" %02X", data[idx]);
-            printf("\n");
-        }
+        mNRF->getData(data);
+        return 1;
     }
+    return 0;
 }

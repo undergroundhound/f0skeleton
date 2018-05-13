@@ -9,6 +9,7 @@
 
 #include "role_master.h"
 #include "p_msg.h"
+#include "pyro_registers.h"
 
 RoleMaster::RoleMaster(BiLED *led, NodeInterface *nodeInterface) : Role(led, nodeInterface)
 {
@@ -16,6 +17,7 @@ RoleMaster::RoleMaster(BiLED *led, NodeInterface *nodeInterface) : Role(led, nod
     longPress = 0;
     mArmed = 0;
     rocketCount = 0;
+    mRxAvailable = false;
 
     mNodeInterface->pingNodes(1, MAX_NODES);
 
@@ -29,6 +31,7 @@ RoleMaster::RoleMaster(BiLED *led, NodeInterface *nodeInterface) : Role(led, nod
         printf("%d\n", nodes[idx]);
     }
 
+    nodeInterface->listen();
 }
 
 void RoleMaster::armSlaves(uint8_t armed)
@@ -51,6 +54,37 @@ void RoleMaster::armSlaves(uint8_t armed)
     mNodeInterface->sendToNodes(mData);
 }
 
+void RoleMaster::getRegister(uint8_t slave, uint8_t reg, uint8_t *value)
+{
+    sPmsg_t pmsg;
+    pmsg.type = PMSG_TYPE_GET;
+    pmsg.tag = PMSG_TAG_READ_REG;
+    pmsg.data[0] = reg;
+    pmsg.data[1] = 0;
+
+    mNodeInterface->sendToNode(slave, (uint8_t *)&pmsg);
+
+    mNodeInterface->dataAvailable(false);
+
+    int timeout = 1000;
+    while(!mNodeInterface->runRx((uint8_t *)&pmsg) && timeout--);
+
+    if(!timeout)
+        return;
+
+    *value = pmsg.data[1];
+}
+
+void RoleMaster::setRegister(uint8_t slave, uint8_t reg, uint8_t value)
+{
+    sPmsg_t pmsg;
+    pmsg.type = PMSG_TYPE_SET;
+    pmsg.tag = PMSG_TAG_WRITE_REG;
+    pmsg.data[0] = reg;
+    pmsg.data[1] = value;
+
+    mNodeInterface->sendToNode(slave, (uint8_t *)&pmsg);
+}
 
 void RoleMaster::buttonCallback(uint8_t state)
 {
@@ -73,6 +107,13 @@ void RoleMaster::buttonCallback(uint8_t state)
 
 void RoleMaster::run()
 {
+    if(mNodeInterface->runRx(rxData))
+    {
+        PrintInfo("Master data in: ");
+          for (uint8_t idx = 0; idx < 4; idx++)
+              printf("%02X ", rxData[idx]);
+          printf("\n");
+    }
     if(longPress)
     {
         longPress = 0;

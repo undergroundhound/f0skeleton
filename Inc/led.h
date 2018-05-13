@@ -16,7 +16,7 @@ typedef struct{
 } sLEDflash_t;
 
 const sLEDflash_t LED_OFF        = {0xFFFF, 0b00000000};
-const sLEDflash_t LED_HEARTBEAT  = {100,    0b10010000};
+const sLEDflash_t LED_HEARTBEAT  = {125,    0b10100000};
 const sLEDflash_t LED_FAST_FLASH = {75,     0b10101010};
 const sLEDflash_t LED_SLOW_FLASH = {250,    0b11001100};
 
