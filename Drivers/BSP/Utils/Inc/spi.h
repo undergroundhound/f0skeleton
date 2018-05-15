@@ -19,14 +19,14 @@
  * PA7  --> SPI1_MOSI
  * PB3  --> SPI1_SCK
  */
-#define SPI1_GPIO_NSS_PIN         GPIO_PIN_4
-#define SPI1_GPIO_NSS_PORT        GPIOA
-#define SPI1_GPIO_MISO_PIN        GPIO_PIN_6
-#define SPI1_GPIO_MISO_PORT       GPIOA
-#define SPI1_GPIO_MOSI_PIN        GPIO_PIN_7
-#define SPI1_GPIO_MOSI_PORT       GPIOA
-#define SPI1_GPIO_SCK_PIN         GPIO_PIN_5
-#define SPI1_GPIO_SCK_PORT        GPIOA
+//#define SPI1_GPIO_NSS_PIN         GPIO_PIN_12
+//#define SPI1_GPIO_NSS_PORT        GPIOB
+#define SPI1_GPIO_MISO_PIN        GPIO_PIN_14
+#define SPI1_GPIO_MISO_PORT       GPIOB
+#define SPI1_GPIO_MOSI_PIN        GPIO_PIN_15
+#define SPI1_GPIO_MOSI_PORT       GPIOB
+#define SPI1_GPIO_SCK_PIN         GPIO_PIN_13
+#define SPI1_GPIO_SCK_PORT        GPIOB
 #define SPI1_GPIO_AF			  GPIO_AF0_SPI1
 
 

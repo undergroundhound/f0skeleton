@@ -90,7 +90,7 @@ void RoleMaster::buttonCallback(uint8_t state)
 {
     switch (state) {
         case 1:
-//            printf(": ");
+            printf(": ");
             break;
         case 2:
             shortPress = 1;

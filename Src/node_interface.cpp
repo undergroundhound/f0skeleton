@@ -29,7 +29,6 @@ HAL_StatusTypeDef NodeInterface::configure(uint8_t channel, uint8_t payloadLen, 
     HAL_StatusTypeDef status = mNRF->config(channel, payloadLen);
     if(status != HAL_OK)
         return status;
-
     mId = id;
     if(!mId)
         mRole = NODE_ROLE_MASTER;
@@ -38,12 +37,11 @@ HAL_StatusTypeDef NodeInterface::configure(uint8_t channel, uint8_t payloadLen, 
 
     mPayLoadLen = payloadLen;
 
-    mNRF->txAddress(txAddr);
     memcpy(mTxAddress, txAddr, 5);
+    mNRF->txAddress(mTxAddress);
 
     mNRF->rxAddress(rxAddr);
     memcpy(mRxAddress, rxAddr, 5);
-
     return status;
 }
 

@@ -132,8 +132,9 @@ sTermEntry_t rebootEntry =
  * Public functions
  */
 
-void terminal_init()
+uint8_t terminal_init()
 {
+    terminal_ioInit();
     /*-- Configure the UART peripheral --*/
     hUart.Instance = TERM_USART;
     hUart.Init.BaudRate = 115200;
@@ -142,11 +143,15 @@ void terminal_init()
     hUart.Init.Parity = UART_PARITY_NONE;
     hUart.Init.HwFlowCtl = UART_HWCONTROL_NONE;
     hUart.Init.Mode = UART_MODE_TX_RX;
+    hUart.Init.OverSampling = UART_OVERSAMPLING_16;
+    hUart.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+    hUart.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
 
     if (HAL_UART_Init(&hUart) != HAL_OK)
     {
         /* Initialization Error */
-        Error_Handler();
+//        Error_Handler();
+        return 0;
     }
 
     TERM_USART->CR1 |= USART_CR1_RXNEIE;
@@ -158,6 +163,7 @@ void terminal_init()
     setbuf(stdout, 0);
 
     terminal_active = true;
+    return 1;
 }
 
 void terminal_deInit()
@@ -171,25 +177,39 @@ void terminal_deInit()
 
 void terminal_ioInit()
 {
-    /* Enable USART2 clock */
-    TERM_USART_CLK_ENABLE()
-    ;
+    GPIO_InitTypeDef GPIO_InitStruct;
+    __HAL_RCC_USART1_CLK_ENABLE();
 
-    GPIO_InitTypeDef GPIO_InitStruct =
-    { 0 };
-    /* Enable GPIO TX/RX clock */
-    TERM_USART_TX_GPIO_CLK_ENABLE()
-    ;
-    TERM_USART_RX_GPIO_CLK_ENABLE()
-    ;
-    /* UART TX GPIO pin configuration  */
-    GPIO_InitStruct.Pin = USART_TX_Pin | USART_RX_Pin;
+    /**USART1 GPIO Configuration
+    PA2     ------> USART1_TX
+    PA3     ------> USART1_RX
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_10;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = TERM_USART_TX_AF;
+    GPIO_InitStruct.Alternate = GPIO_AF1_USART1;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    HAL_GPIO_Init(TERM_USART_GPIO_PORT, &GPIO_InitStruct);
+    /* Enable USART2 clock */
+//    TERM_USART_CLK_ENABLE()
+//    ;
+//
+//    GPIO_InitTypeDef GPIO_InitStruct =
+//    { 0 };
+//    /* Enable GPIO TX/RX clock */
+//    TERM_USART_TX_GPIO_CLK_ENABLE()
+//    ;
+//    TERM_USART_RX_GPIO_CLK_ENABLE()
+//    ;
+//    /* UART TX GPIO pin configuration  */
+//    GPIO_InitStruct.Pin = USART_TX_Pin | USART_RX_Pin;
+//    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+//    GPIO_InitStruct.Pull = GPIO_PULLUP;
+//    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+//    GPIO_InitStruct.Alternate = TERM_USART_TX_AF;
+//
+//    HAL_GPIO_Init(TERM_USART_GPIO_PORT, &GPIO_InitStruct);
 }
 
 void terminal_ioDeInit()

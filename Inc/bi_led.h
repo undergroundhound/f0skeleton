@@ -16,7 +16,7 @@ typedef struct{
     uint8_t greenFlashByte;
 } sBiLEDflash_t;
 
-const sBiLEDflash_t BILED_SLOW_FUCKAROUND = {250, \
+const sBiLEDflash_t BILED_SLOW_FUCKAROUND = {100, \
         0b10101010, \
         0b01010101};
 

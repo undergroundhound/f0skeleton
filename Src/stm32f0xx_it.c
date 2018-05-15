@@ -69,13 +69,13 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /* USER CODE BEGIN 1 */
-void USART2_IRQHandler(void)
+void USART1_IRQHandler(void)
 {
     static uint8_t escaped;
-    if (USART2->ISR & UART_FLAG_RXNE)
+    if (USART1->ISR & UART_FLAG_RXNE)
     {
-        USART2->ICR = 0xFF;
-        uint8_t c = USART2->RDR;
+        USART1->ICR = 0xFF;
+        uint8_t c = USART1->RDR;
 
         // escape character
         if(c == 0x1B)
@@ -96,13 +96,13 @@ void USART2_IRQHandler(void)
         }
 
         //echo typed character
-        USART2->TDR = c;
-        while (!(USART2->ISR & USART_ISR_TC));
+        USART1->TDR = c;
+        while (!(USART1->ISR & USART_ISR_TC));
 
         if (c == '\r')
         {
-            USART2->TDR = '\n';
-            while (!(USART2->ISR & USART_ISR_TC));
+            USART1->TDR = '\n';
+            while (!(USART1->ISR & USART_ISR_TC));
         }
 
         terminal_handleByte(c, 0);

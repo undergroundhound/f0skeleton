@@ -51,7 +51,6 @@
 #include "output.h"
 #include "spi.h"
 #include "nrf24L01.h"
-#include "spi_device.h"
 #include "nvm.h"
 #include "hw_gpio.h"
 #include "led.h"
@@ -60,6 +59,7 @@
 #include "bi_led.h"
 #include "device_controller.h"
 #include "adc.h"
+#include "i2c.h"
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -71,8 +71,7 @@
 cSPI spi = cSPI();
 cOutput *csn;
 cOutput *ce;
-cOutput *mFlashCs;
-cSpiDevice *mSpiFlash;
+
 NVM *mNVM;
 
 NRF24L01 nrf = NRF24L01();
@@ -87,6 +86,10 @@ Button *buttonLaunch;
 DeviceController deviceController = DeviceController();
 
 cADC *adc;
+
+cOutput *outputs[4];
+
+
 
 static uint8_t deviceAddr[4] =
 { 0x3E, 0x7C, 0x8D, 0x2E };
@@ -177,40 +180,32 @@ int main(void)
     printf("welcome!\n");
 
     PrintInfo("SPI1");
-    if (spi.init(SPI1, 50000) == HAL_OK)
+    if (spi.init(SPI1, 100000) == HAL_OK)
         printf(GREEN("OK\n"));
     else
         printf(RED("Fail\n"));
 
     /* Initialize the LEDs */
-    RstatusLed = new LED(GPIOA, GPIO_PIN_0);
-    GstatusLed = new LED(GPIOA, GPIO_PIN_1);
+    RstatusLed = new LED(GPIOA, GPIO_PIN_14);
+    GstatusLed = new LED(GPIOA, GPIO_PIN_15);
     statusLED = new BiLED(RstatusLed, GstatusLed);
 
-    csn = new cOutput(GPIOB, GPIO_PIN_10);
-    ce = new cOutput(GPIOB, GPIO_PIN_4);
+    csn = new cOutput(GPIOB, GPIO_PIN_12);
+    ce = new cOutput(GPIOB, GPIO_PIN_2);
 
-    mFlashCs = new cOutput(GPIOB, GPIO_PIN_6);
-    mSpiFlash = new cSpiDevice(&spi, mFlashCs);
-    mNVM = new NVM(mSpiFlash);
+    I2C iic = I2C();
+    iic.init();
+    mNVM = new NVM(&iic);
 
-    buttonLaunch = new Button(GPIOB, GPIO_PIN_5);
+    buttonLaunch = new Button(GPIOB, GPIO_PIN_7);
     buttonLaunch->setCb(buttonPress);
-    HW_SetupIrq(GPIOB, GPIO_PIN_5, GPIO_MODE_IT_RISING_FALLING, GPIO_PULLUP, buttonIrq);
-
-    /* Probe the flash */
-    uint8_t id[3];
-    mSpiFlash->readId(id, 3);
-    PrintInfo("Flash ID");
-    for (int i = 0; i < 3; i++)
-        printf("%02X", id[i]);
-    printf("\n");
+    HW_SetupIrq(GPIOB, GPIO_PIN_7, GPIO_MODE_IT_RISING_FALLING, GPIO_PULLUP, buttonIrq);
 
     PrintInfo("nRF");
     if(nrf.init(&spi, csn, ce) == HAL_OK)
     {
         printf(GREEN("OK\n"));
-        HW_SetupIrq(GPIOA, GPIO_PIN_8, GPIO_MODE_IT_FALLING, GPIO_NOPULL, nrfIrq);
+        HW_SetupIrq(GPIOB, GPIO_PIN_1, GPIO_MODE_IT_FALLING, GPIO_NOPULL, nrfIrq);
     }
     else
         printf(RED("Fail\n"));
@@ -219,6 +214,10 @@ int main(void)
 
     {
         sNvm_t nvm;
+
+        printId();
+        printChannel();
+        printAddr();
         mNVM->get(&nvm);
         PrintInfo("nRF Config");
         if(nodeInterface->configure(nvm.channel, 4, nvm.txAddr, nvm.rxAddr, nvm.id) == HAL_OK)
@@ -227,20 +226,27 @@ int main(void)
             printf(RED("Fail\n"));
     }
 
-    printId();
-    printChannel();
-    printAddr();
+
     nodeInterface->listen();
 
     deviceController.init(nodeInterface, statusLED);
 
-    statusLED->setFlasher(BILED_SLOW_FUCKAROUND);
+    statusLED->setFlash(LED_GREEN, LED_HEARTBEAT);
 
-    adc = new cADC();
-    adc->init();
-    nrf.powerUpRx();
-    printf("adc [0]: %d\n", adc->sampleChannel(4));
+//    adc = new cADC();
+//    adc->init();
+//    nrf.powerUpRx();
+//    printf("adc [0]: %d\n", adc->sampleChannel(4));
 
+
+    cOutput out1 = cOutput(GPIOB, GPIO_PIN_0);
+    cOutput out2 = cOutput(GPIOA, GPIO_PIN_6);
+    cOutput out3 = cOutput(GPIOA, GPIO_PIN_4);
+    cOutput out4 = cOutput(GPIOA, GPIO_PIN_2);
+    outputs[0] = &out1;
+    outputs[1] = &out2;
+    outputs[2] = &out3;
+    outputs[3] = &out4;
 
     while (1)
     {
@@ -369,23 +375,46 @@ sTermEntry_t addrEntry =
 
 void SendPacket(uint8_t argc, char **argv)
 {
+   if(argc == 1)
+   {
+       for(uint8_t idx = 0; idx < 4; idx++)
+       {
+           printf("DRV %d: ", idx+1);
+           outputs[idx]->get() ? printf("SET") : printf("RESET");
+           printf("\n");
+       }
+   }
 
-    uint8_t data[4];
-    memset(data, 0x00, 4);
+   if(argc == 3)
+   {
+       int idx = atoi(argv[1]);
+       if(idx > 4 || idx < 0)
+       {
+           printf(RED("1 < number < 4\n"));
+           return;
+       }
+       idx--;
 
-    printf("ping node ");
-
-    nrf.send(data);
-    while(nrf.isSending());
-
-    if(nrf.lastMessageStatus() == NRF24_TRANSMISSON_OK)
-        printf(GREEN("OK\n"));
-    else
-        printf(RED("Fail\n"));
-
+       uint8_t set = atoi(argv[2]);
+       if(set == 1)
+       {
+           printf("set ");
+           outputs[idx]->set();
+       }
+       else if(set == 0)
+       {
+           printf("reset ");
+           outputs[idx]->reset();
+       }
+       else
+       {
+           printf(RED("0 - reset\n1 - set\n"));
+       }
+       printf("DRV %d\n", idx+1);
+   }
 }
 sTermEntry_t sendEntry =
-{ "gs", "Get and Set", SendPacket };
+{ "out", "output <number> <state>", SendPacket };
 
 /**
  * @brief  This function is executed in case of error occurrence.

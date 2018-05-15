@@ -12,7 +12,7 @@ CPU = -mcpu=cortex-m0
 # LDFLAGS
 #######################################
 # link script
-LDSCRIPT = STM32F030R8Tx_FLASH.ld
+LDSCRIPT = STM32F030C6Tx_FLASH.ld
 
 # Build path
 BUILD_DIR = build
@@ -49,6 +49,7 @@ Src/commands.c \
 Drivers/BSP/Utils/Src/terminal.c \
 Drivers/BSP/Utils/Src/spi_device.c \
 Drivers/BSP/Utils/Src/hw_gpio.c \
+Drivers/BSP/Utils/Src/i2c.c \
 #Drivers/BSP/nrf24L01/nrf24.c \
 Drivers/BSP/nrf24L01/radioPinFunctions.c
 
@@ -61,12 +62,12 @@ Drivers/BSP/Utils/Src/spi.cpp  \
 
 # ASM sources
 ASM_SOURCES =  \
-startup_stm32f030x8.s
+startup_stm32f030x6.s
 
 # C defines
 C_DEFS =  \
 -DUSE_HAL_DRIVER \
--DSTM32F030x8
+-DSTM32F030x6
 
 # C includes
 C_INCLUDES =  \

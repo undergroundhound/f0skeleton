@@ -8,21 +8,21 @@
 #include "stm32f0xx.h"
 /* --------------------------- USART HW definition -------------------------------*/
 
- #define TERM_USART                         USART2
- #define TERM_USART_CLK_ENABLE()            __HAL_RCC_USART2_CLK_ENABLE()
+ #define TERM_USART                         USART1
+ #define TERM_USART_CLK_ENABLE()            __HAL_RCC_USART1_CLK_ENABLE()
  #define TERM_USART_RX_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOA_CLK_ENABLE()
  #define TERM_USART_TX_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOA_CLK_ENABLE()
- #define TERM_USART_FORCE_RESET()           __HAL_RCC_USART2_FORCE_RESET()
- #define TERM_USART_RELEASE_RESET			__HAL_RCC___USART2_RELEASE_RESET()
+ #define TERM_USART_FORCE_RESET()           __HAL_RCC_USART1_FORCE_RESET()
+ #define TERM_USART_RELEASE_RESET			__HAL_RCC___USART1_RELEASE_RESET()
  #define TERM_USART_GPIO_PORT            	GPIOA
- #define TERM_USART_TX_PIN                	GPIO_PIN_2
- #define TERM_USART_TX_AF                   GPIO_AF1_USART2
- #define TERM_USART_RX_PIN                  GPIO_PIN_3
- #define TERM_USART_RX_AF                   GPIO_AF1_USART2
+ #define TERM_USART_TX_PIN                	GPIO_PIN_9
+ #define TERM_USART_TX_AF                   GPIO_AF1_USART1
+ #define TERM_USART_RX_PIN                  GPIO_PIN_10
+ #define TERM_USART_RX_AF                   GPIO_AF1_USART1
 
  /* Definition for USARTx's NVIC */
- #define TERM_USART_IRQn                    USART2_IRQn
- #define TERM_USART_IRQHandler              USART2_IRQHandler
+ #define TERM_USART_IRQn                    USART1_IRQn
+ #define TERM_USART_IRQHandler              USART1_IRQHandler
 
 #ifndef VT100_OFF
 #define COLOR(__c,__x)    "\x1b[3" #__c "m" __x "\x1b[0m"
@@ -61,7 +61,7 @@ typedef struct
     void (*cmdFunc)(uint8_t argc, char **argv);
 } sTermEntry_t;
 
-void terminal_init();
+uint8_t terminal_init();
 void terminal_deInit();
 void terminal_ioInit();
 void terminal_ioDeInit();

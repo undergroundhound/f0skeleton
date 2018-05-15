@@ -7,9 +7,9 @@
 
 #include "nvm.h"
 
-NVM::NVM(cSpiDevice *device)
+NVM::NVM(I2C *device) : mDevice(device)
 {
-    mDevice = device;
+
 }
 
 NVM::~NVM()
@@ -17,10 +17,6 @@ NVM::~NVM()
 
 }
 
-void NVM::erase()
-{
-    mDevice->erase(NVM_ADDR, 4);
-}
 
 void NVM::get(sNvm_t *nvm)
 {
@@ -29,8 +25,5 @@ void NVM::get(sNvm_t *nvm)
 
 void NVM::set(sNvm_t *nvm)
 {
-    erase();
-    while(mDevice->isReady() == HAL_BUSY)
-        HAL_Delay(50);
     mDevice->write(NVM_ADDR, (uint8_t *)nvm, sizeof(sNvm_t));
 }
