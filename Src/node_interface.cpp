@@ -17,6 +17,7 @@ NodeInterface::NodeInterface(NRF24L01 *nrfRadio) : mNRF(nrfRadio)
 
     mId = 0;
     mRole = NODE_ROLE_UNKNOWN;
+
 }
 
 NodeInterface::~NodeInterface()
@@ -119,7 +120,7 @@ HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t nodeId, uint8_t *data)
     mNRF->txAddress(devAddr);
 
     mNRF->send(data);
-    uint32_t timeOut = HAL_GetTick() + 200;
+    uint32_t timeOut = HAL_GetTick() + 1;
     while(mNRF->isSending() && (timeOut > HAL_GetTick()));
 
     mNRF->powerUpRx();
@@ -128,8 +129,23 @@ HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t nodeId, uint8_t *data)
     if(timeOut < HAL_GetTick())
         return HAL_TIMEOUT;
 
-    if(mNRF->lastMessageStatus() == NRF24_TRANSMISSON_OK)
-        return HAL_OK;
+
+//    if(mNRF->lastMessageStatus() == NRF24_TRANSMISSON_OK)
+//    {
+//
+////        return HAL_OK;
+//    }
+
+    if(pingNode(devAddr) == HAL_OK)
+    {
+        mLedR.reset();
+        mLedG.set();
+    }
+    else
+    {
+        mLedG.reset();
+        mLedR.set();
+    }
 
     return HAL_ERROR;
 }

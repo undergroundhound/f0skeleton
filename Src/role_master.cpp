@@ -107,13 +107,13 @@ void RoleMaster::buttonCallback(uint8_t state)
 
 void RoleMaster::run()
 {
-    if(mNodeInterface->runRx(rxData))
-    {
-        PrintInfo("Master data in: ");
-          for (uint8_t idx = 0; idx < 4; idx++)
-              printf("%02X ", rxData[idx]);
-          printf("\n");
-    }
+//    if(mNodeInterface->runRx(rxData))
+//    {
+//        PrintInfo("Master data in: ");
+//          for (uint8_t idx = 0; idx < 4; idx++)
+//              printf("%02X ", rxData[idx]);
+//          printf("\n");
+//    }
     if(longPress)
     {
         longPress = 0;

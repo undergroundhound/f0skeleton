@@ -70,7 +70,7 @@ void Button::run()
             return;
         }
 
-        if(HW_GPIO_Read(mGpio, GPIO_PIN_5) != RESET)
+        if(HW_GPIO_Read(mGpio, mPin) != RESET)
         {
             mState = false;
 
