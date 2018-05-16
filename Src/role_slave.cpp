@@ -9,10 +9,27 @@
 #include "role_slave.h"
 #include "p_msg.h"
 
+#define FIRE_TIME_ON    1000 //1000ms
 
 RoleSlave::RoleSlave(BiLED *led, NodeInterface *nodeInterface) : Role(led, nodeInterface)
 {
     mArmed = false;
+
+    out1.reset();
+    outputs[0] = &out1;
+    timeOuts[0] = 0;
+
+    out2.reset();
+    outputs[1] = &out2;
+    timeOuts[1] = 0;
+
+    out3.reset();
+    outputs[2] = &out3;
+    timeOuts[2] = 0;
+
+    out4.reset();
+    outputs[3] = &out4;
+    timeOuts[3] = 0;
 
 //    led1.setFlash(LED_RED, LED_FAST_FLASH);
 }
@@ -29,6 +46,11 @@ void RoleSlave::arm(uint8_t state)
     else
     {
         printf(GREEN("!ARMED\n"));
+        for(uint8_t idx = 0; idx < 4; idx++)
+        {
+            outputs[idx]->reset();
+            timeOuts[idx] = 0;
+        }
     }
 }
 
@@ -52,6 +74,17 @@ void RoleSlave::buttonCallback(uint8_t state)
 
 void RoleSlave::run()
 {
+    //reset output after a second
+    for(uint8_t idx=0; idx < 4; idx++)
+    {
+        if(timeOuts[idx] && timeOuts[idx] < HAL_GetTick())
+        {
+            printf("output[%d] reset\n", idx);
+            outputs[idx]->reset();
+            timeOuts[idx] = 0;
+        }
+    }
+
     if(mNodeInterface->runRx(rxData))
     {
         sPmsg_t pmsg;
@@ -78,8 +111,15 @@ void RoleSlave::run()
                     break;
                     case PMSG_TAG_FIRE:
                     {
+                        uint8_t fireCount = pmsg.data[1];
                         PrintInfo("FIRE");
                         printf("%d\n", pmsg.data[1]);
+                        if(fireCount < 4)
+                        {
+                            printf("output[%d] set\n", fireCount);
+                            outputs[fireCount]->set();
+                            timeOuts[fireCount] = HAL_GetTick() + FIRE_TIME_ON;
+                        }
                     }
                     break;
                     case PMSG_TAG_WRITE_REG:

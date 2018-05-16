@@ -141,7 +141,7 @@ void RoleMaster::run()
         shortPress = 0;
         if(mArmed)
         {
-            printf("pew\n");
+            printf("pew: %d\n", rocketCount);
             sPmsg_t msg;
             msg.type = PMSG_TYPE_SET;
             msg.tag = PMSG_TAG_FIRE;

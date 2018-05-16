@@ -87,7 +87,7 @@ DeviceController deviceController = DeviceController();
 
 cADC *adc;
 
-cOutput *outputs[4];
+
 
 
 
@@ -239,14 +239,7 @@ int main(void)
 //    printf("adc [0]: %d\n", adc->sampleChannel(4));
 
 
-    cOutput out1 = cOutput(GPIOB, GPIO_PIN_0);
-    cOutput out2 = cOutput(GPIOA, GPIO_PIN_6);
-    cOutput out3 = cOutput(GPIOA, GPIO_PIN_4);
-    cOutput out4 = cOutput(GPIOA, GPIO_PIN_2);
-    outputs[0] = &out1;
-    outputs[1] = &out2;
-    outputs[2] = &out3;
-    outputs[3] = &out4;
+
 
     while (1)
     {
@@ -375,43 +368,44 @@ sTermEntry_t addrEntry =
 
 void SendPacket(uint8_t argc, char **argv)
 {
-   if(argc == 1)
-   {
-       for(uint8_t idx = 0; idx < 4; idx++)
-       {
-           printf("DRV %d: ", idx+1);
-           outputs[idx]->get() ? printf("SET") : printf("RESET");
-           printf("\n");
-       }
-   }
-
-   if(argc == 3)
-   {
-       int idx = atoi(argv[1]);
-       if(idx > 4 || idx < 0)
-       {
-           printf(RED("1 < number < 4\n"));
-           return;
-       }
-       idx--;
-
-       uint8_t set = atoi(argv[2]);
-       if(set == 1)
-       {
-           printf("set ");
-           outputs[idx]->set();
-       }
-       else if(set == 0)
-       {
-           printf("reset ");
-           outputs[idx]->reset();
-       }
-       else
-       {
-           printf(RED("0 - reset\n1 - set\n"));
-       }
-       printf("DRV %d\n", idx+1);
-   }
+    printf("this now does nothing.\n");
+//   if(argc == 1)
+//   {
+//       for(uint8_t idx = 0; idx < 4; idx++)
+//       {
+//           printf("DRV %d: ", idx+1);
+//           outputs[idx]->get() ? printf("SET") : printf("RESET");
+//           printf("\n");
+//       }
+//   }
+//
+//   if(argc == 3)
+//   {
+//       int idx = atoi(argv[1]);
+//       if(idx > 4 || idx < 0)
+//       {
+//           printf(RED("1 < number < 4\n"));
+//           return;
+//       }
+//       idx--;
+//
+//       uint8_t set = atoi(argv[2]);
+//       if(set == 1)
+//       {
+//           printf("set ");
+//           outputs[idx]->set();
+//       }
+//       else if(set == 0)
+//       {
+//           printf("reset ");
+//           outputs[idx]->reset();
+//       }
+//       else
+//       {
+//           printf(RED("0 - reset\n1 - set\n"));
+//       }
+//       printf("DRV %d\n", idx+1);
+//   }
 }
 sTermEntry_t sendEntry =
 { "out", "output <number> <state>", SendPacket };
