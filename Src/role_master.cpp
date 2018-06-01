@@ -13,13 +13,15 @@
 
 RoleMaster::RoleMaster(BiLED *led, NodeInterface *nodeInterface) : Role(led, nodeInterface)
 {
+    nextPoll = 0;
     shortPress = 0;
     longPress = 0;
     mArmed = 0;
     rocketCount = 0;
     mRxAvailable = false;
 
-    mNodeInterface->pingNodes(1, MAX_NODES);
+    uint8_t status = 0;
+    mNodeInterface->pingNodes(1, MAX_NODES, &status);
 
     uint8_t nodes[MAX_NODES];
     uint8_t nodeCount = mNodeInterface->getNodes(nodes);
@@ -104,9 +106,21 @@ void RoleMaster::buttonCallback(uint8_t state)
 }
 
 
+void RoleMaster::checkSlaves()
+{
+    if(HAL_GetTick() > nextPoll)
+    {
+        nextPoll = HAL_GetTick() + 1000;
+        uint8_t status = 0;
+        mNodeInterface->pingNodes(1, MAX_NODES, &status);
+        printf("node state: %02X\n", status);
+    }
+
+}
 
 void RoleMaster::run()
 {
+    checkSlaves();
 //    if(mNodeInterface->runRx(rxData))
 //    {
 //        PrintInfo("Master data in: ");

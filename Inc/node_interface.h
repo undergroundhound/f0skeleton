@@ -46,7 +46,7 @@ public:
     void dataAvailable(bool state);
 
     HAL_StatusTypeDef pingNode(uint8_t *addr);
-    HAL_StatusTypeDef pingNodes(uint8_t startAddr, uint8_t endAddr);
+    HAL_StatusTypeDef pingNodes(uint8_t startAddr, uint8_t endAddr, uint8_t *state);
     uint8_t getNodes(uint8_t *nodes);
 
     HAL_StatusTypeDef sendToNode(uint8_t nodeId, uint8_t *data);

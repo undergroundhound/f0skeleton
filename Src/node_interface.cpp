@@ -68,6 +68,7 @@ HAL_StatusTypeDef NodeInterface::pingNode(uint8_t *addr)
     memset(data, 0x00, mPayLoadLen);
 
     mNRF->txAddress(addr);
+    HAL_Delay(5);
 
     mNRF->send(data);
     uint32_t timeOut = HAL_GetTick() + 100;
@@ -83,14 +84,18 @@ HAL_StatusTypeDef NodeInterface::pingNode(uint8_t *addr)
     return HAL_ERROR;
 }
 
-HAL_StatusTypeDef NodeInterface::pingNodes(uint8_t startAddr, uint8_t endAddr)
+HAL_StatusTypeDef NodeInterface::pingNodes(uint8_t startAddr, uint8_t endAddr, uint8_t *state)
 {
     //if not master
     if(mId)
         return HAL_ERROR;
 
+    uint8_t s = 0;
     uint8_t devAddr[5];
     memcpy(devAddr, deviceAddr, 4);
+
+    mNodeCount = 0;
+    memset(mNodes, 0x00, MAX_NODES);
 
     while(startAddr < endAddr)
     {
@@ -101,11 +106,15 @@ HAL_StatusTypeDef NodeInterface::pingNodes(uint8_t startAddr, uint8_t endAddr)
             return HAL_TIMEOUT;
 
         if(status == HAL_OK)
+        {
+            s |= (1 << mNodeCount);
             mNodes[mNodeCount++] = startAddr;
+        }
 
         startAddr++;
     }
 
+    *state = s;
     return HAL_OK;
 }
 

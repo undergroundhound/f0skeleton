@@ -12,6 +12,7 @@
 
 class RoleMaster : public Role
 {
+    uint32_t nextPoll;
     uint8_t mArmed;
     uint8_t rocketCount;
     volatile uint8_t shortPress = 0;
@@ -20,6 +21,7 @@ class RoleMaster : public Role
     uint8_t rxData[4];
     bool mRxAvailable;
 
+    void checkSlaves();
     void armSlaves(uint8_t armed);
 
     void getRegister(uint8_t slave, uint8_t reg, uint8_t *value);
