@@ -115,7 +115,16 @@ void RoleMaster::checkSlaves()
         mNodeInterface->pingNodes(1, MAX_NODES, &status);
         printf("node state: %02X\n", status);
     }
-
+//    if(pingNode(devAddr) == HAL_OK)
+//    {
+//        mLedR.reset();
+//        mLedG.set();
+//    }
+//    else
+//    {
+//        mLedG.reset();
+//        mLedR.set();
+//    }
 }
 
 void RoleMaster::run()

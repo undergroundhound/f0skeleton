@@ -145,16 +145,7 @@ HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t nodeId, uint8_t *data)
 ////        return HAL_OK;
 //    }
 
-    if(pingNode(devAddr) == HAL_OK)
-    {
-        mLedR.reset();
-        mLedG.set();
-    }
-    else
-    {
-        mLedG.reset();
-        mLedR.set();
-    }
+
 
     return HAL_ERROR;
 }

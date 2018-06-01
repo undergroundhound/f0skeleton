@@ -29,8 +29,7 @@ class NodeInterface
     uint8_t mNodes[MAX_NODES];
     uint8_t mNodeCount;
 
-    cOutput mLedR = cOutput(GPIOB, GPIO_PIN_6);
-    cOutput mLedG = cOutput(GPIOB, GPIO_PIN_5);
+
 
     uint8_t deviceAddr[4] =
     { 0x3E, 0x7C, 0x8D, 0x2E };
