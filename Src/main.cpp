@@ -53,13 +53,14 @@
 #include "nrf24L01.h"
 #include "nvm.h"
 #include "hw_gpio.h"
-#include "led.h"
+//#include "led.h"
 #include "button.h"
 #include "p_msg.h"
-#include "bi_led.h"
+//#include "bi_led.h"
 #include "device_controller.h"
 #include "adc.h"
 #include "i2c.h"
+#include "bi_led_2.h"
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -77,19 +78,11 @@ NVM *mNVM;
 NRF24L01 nrf = NRF24L01();
 NodeInterface *nodeInterface;
 
-LED *RstatusLed;
-LED *GstatusLed;
-BiLED *statusLED;
-
 Button *buttonLaunch;
 
 DeviceController deviceController = DeviceController();
 
 cADC *adc;
-
-
-
-
 
 static uint8_t deviceAddr[4] =
 { 0x3E, 0x7C, 0x8D, 0x2E };
@@ -185,11 +178,6 @@ int main(void)
     else
         printf(RED("Fail\n"));
 
-    /* Initialize the LEDs */
-    RstatusLed = new LED(GPIOA, GPIO_PIN_14);
-    GstatusLed = new LED(GPIOA, GPIO_PIN_15);
-    statusLED = new BiLED(RstatusLed, GstatusLed);
-
     csn = new cOutput(GPIOB, GPIO_PIN_12);
     ce = new cOutput(GPIOB, GPIO_PIN_2);
 
@@ -229,9 +217,44 @@ int main(void)
 
     nodeInterface->listen();
 
-    deviceController.init(nodeInterface, statusLED);
+    /* Initialize the LEDs */
+    cOutput led1green(GPIOA, GPIO_PIN_12);
+    cOutput led1red(GPIOA, GPIO_PIN_13);
 
-    statusLED->setFlash(LED_GREEN, LED_HEARTBEAT);
+    cOutput led2green(GPIOF, GPIO_PIN_6);
+    cOutput led2red(GPIOF, GPIO_PIN_7);
+
+    cOutput led3green(GPIOA, GPIO_PIN_14);
+    cOutput led3red(GPIOA, GPIO_PIN_15);
+
+    cOutput led4green(GPIOB, GPIO_PIN_3);
+    cOutput led4red(GPIOB, GPIO_PIN_4);
+
+    cOutput led5green(GPIOB, GPIO_PIN_5);
+    cOutput led5red(GPIOB, GPIO_PIN_6);
+
+    BiLED2 led1(&led1green, &led1red);
+    BiLED2 led2(&led2green, &led2red);
+    BiLED2 led3(&led3green, &led3red);
+    BiLED2 led4(&led4green, &led4red);
+    BiLED2 led5(&led5green, &led5red);
+
+    led1.flash(BILED2_FLASH_GREEN, 500);
+    led2.flash(BILED2_FLASH_GREEN, 600);
+    led3.flash(BILED2_FLASH_GREEN, 700);
+    led4.flash(BILED2_FLASH_GREEN, 800);
+    led5.flash(BILED2_FLASH_GREEN, 900);
+
+    BiLED2 *leds[5];
+    leds[0] = &led1;
+    leds[1] = &led2;
+    leds[2] = &led3;
+    leds[3] = &led4;
+    leds[4] = &led5;
+
+    deviceController.init(nodeInterface, leds, 5);
+
+//    statusLED->setFlash(LED_GREEN, LED_HEARTBEAT);
 
 //    adc = new cADC();
 //    adc->init();
@@ -243,9 +266,14 @@ int main(void)
 
     while (1)
     {
-        statusLED->run();
-        buttonLaunch->run();
-        deviceController.run();
+//        static uint8_t ledCount = 0;
+//        if(ledCount > 4)
+//            ledCount = 0;
+
+        for(uint8_t ledCount = 0; ledCount < 5; ledCount++)
+            leds[ledCount]->run();
+//        buttonLaunch->run();
+//        deviceController.run();
         terminal_run();
     }
 }

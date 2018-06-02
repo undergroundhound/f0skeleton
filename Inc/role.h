@@ -9,7 +9,7 @@
 #define SRC_ROLE_H_
 
 #include "hw.h"
-#include "bi_led.h"
+#include "bi_led_2.h"
 #include "node_interface.h"
 
 
@@ -18,10 +18,11 @@ class Role
 protected:
     uint8_t mData[4];
     NodeInterface *mNodeInterface;
-    BiLED *mLED;
+    BiLED2 **mLeds;
+    uint8_t mLedCount;
 
 public:
-    Role(BiLED *led, NodeInterface *nodeInterface);
+    Role(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount);
     virtual ~Role()
     {
     }

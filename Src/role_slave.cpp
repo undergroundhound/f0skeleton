@@ -11,7 +11,7 @@
 
 #define FIRE_TIME_ON    1000 //1000ms
 
-RoleSlave::RoleSlave(BiLED *led, NodeInterface *nodeInterface) : Role(led, nodeInterface)
+RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount)
 {
     mArmed = false;
 
@@ -101,11 +101,11 @@ void RoleSlave::run()
                         arm(armed);
                         if(armed)
                         {
-                            mLED->setFlash(LED_RED, LED_FAST_FLASH);
+                            mLeds[0]->flash(BILED2_FLASH_RED, 1000);
                         }
                         else
                         {
-                            mLED->setFlash(LED_GREEN, LED_HEARTBEAT);
+                            mLeds[0]->flash(BILED2_FLASH_GREEN, 1000);
                         }
                     }
                     break;

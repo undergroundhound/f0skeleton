@@ -17,20 +17,20 @@ DeviceController::~DeviceController()
     // TODO Auto-generated destructor stub
 }
 
-void DeviceController::init(NodeInterface *nodeInterface, BiLED *led)
+void DeviceController::init(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount)
 {
     PrintInfo("Device Role");
 
     if(nodeInterface->getRole() == NODE_ROLE_MASTER)
     {
         printf(CYAN("Master\n"));
-        mRole = new RoleMaster(led, nodeInterface);
+        mRole = new RoleMaster(nodeInterface, led, ledCount);
 
     }
     else
     {
         printf(CYAN("Slave\n"));
-        mRole = new RoleSlave(led, nodeInterface);
+        mRole = new RoleSlave(nodeInterface, led, ledCount);
         nodeInterface->listen();
     }
 }

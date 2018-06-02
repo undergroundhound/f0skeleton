@@ -7,7 +7,6 @@
 
 #include "role.h"
 
-Role::Role(BiLED *led, NodeInterface *nodeInterface) : mNodeInterface(nodeInterface), mLED(led)
+Role::Role(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : mNodeInterface(nodeInterface), mLeds(led), mLedCount(ledCount)
 {
-
 }

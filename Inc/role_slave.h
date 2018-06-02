@@ -36,7 +36,7 @@ class RoleSlave : public Role
 //    BiLED led1 = BiLED(&ledR, &ledG);
 
 public:
-    RoleSlave(BiLED *led, NodeInterface *nodeInterface);
+    RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount);
     void buttonCallback(uint8_t state);
     void run();
 };

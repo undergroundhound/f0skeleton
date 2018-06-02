@@ -10,7 +10,7 @@
 
 #include "hw.h"
 #include "node_interface.h"
-#include "bi_led.h"
+#include "bi_led_2.h"
 
 #include "role.h"
 
@@ -24,7 +24,7 @@ public:
     DeviceController();
     virtual ~DeviceController();
 
-    void init(NodeInterface *nodeInterface, BiLED *led);
+    void init(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount);
     void buttonCB(uint8_t type);
     void run();
 };

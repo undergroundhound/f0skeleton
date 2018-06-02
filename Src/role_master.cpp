@@ -11,7 +11,7 @@
 #include "p_msg.h"
 #include "pyro_registers.h"
 
-RoleMaster::RoleMaster(BiLED *led, NodeInterface *nodeInterface) : Role(led, nodeInterface)
+RoleMaster::RoleMaster(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount)
 {
     nextPoll = 0;
     shortPress = 0;
@@ -114,7 +114,14 @@ void RoleMaster::checkSlaves()
         uint8_t status = 0;
         mNodeInterface->pingNodes(1, MAX_NODES, &status);
         printf("node state: %02X\n", status);
+        if(status)
+        {
+            mLeds[1]->flash(BILED2_FLASH_GREEN, 200);
+            if(status > 1)
+                mLeds[2]->flash(BILED2_FLASH_GREEN, 200);
+        }
     }
+
 //    if(pingNode(devAddr) == HAL_OK)
 //    {
 //        mLedR.reset();
@@ -144,7 +151,7 @@ void RoleMaster::run()
         if(!mArmed)
         {
             // arm now
-            mLED->setFlash(LED_RED, LED_FAST_FLASH);
+            mLeds[0]->flash(BILED2_FLASH_RED, 1000);
             rocketCount= 0;
             mArmed = 1;
             printf(RED("ARMED\n"));
@@ -152,7 +159,7 @@ void RoleMaster::run()
         }
         else
         {
-            mLED->setFlash(LED_GREEN, LED_HEARTBEAT);
+            mLeds[0]->flash(BILED2_FLASH_GREEN, 1000);
             mArmed = 0;
             printf(GREEN("!ARMED\n"));
             armSlaves(0);
