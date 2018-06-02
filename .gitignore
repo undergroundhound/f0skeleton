@@ -6,3 +6,4 @@ orig_Makefile
 Drivers/CMSIS/DSP_Lib/
 Drivers/CMSIS/Lib/
 Drivers/CMSIS/RTOS/
+*.bin
