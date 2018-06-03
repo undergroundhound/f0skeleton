@@ -7,7 +7,7 @@
 
 #include "bi_led_2.h"
 
-void BiLED2::reset()
+void BiLED2::off()
 {
     mGreen->reset();
     mRed->reset();
@@ -15,40 +15,50 @@ void BiLED2::reset()
 
 BiLED2::BiLED2(cOutput *green, cOutput *red) : mGreen(green), mRed(red)
 {
-    mFlashOffTick = 0;
-    mEnabled = false;
+    mTickCount = 0;
+    mLastLick =0 ;
+    mLedColour = 0;
 }
 
-void BiLED2::flash(uint8_t flash, uint32_t timeout)
+void BiLED2::setFlash(sLEDflash_t seqeunce, uint8_t colour)
 {
-    reset();
-    mFlashOffTick = HAL_GetTick() + timeout;
-    mEnabled = true;
+    off();
+    if(colour > 1)
+        return;
 
-    switch (flash) {
-        case BILED2_FLASH_GREEN:
-        {
-            mGreen->set();
-        }
-        break;
-        case BILED2_FLASH_RED:
-        {
-            mRed->set();
-        }
-        break;
-        default:
-            break;
-    }
+    mCurrSequence = seqeunce;
+    mLedColour = colour;
 }
 
 void BiLED2::run()
 {
-    if(!mEnabled)
+    cOutput *out = 0;
+    if(mLedColour == LED_GREEN)
+        out = mGreen;
+    else if(mLedColour == LED_RED)
+        out = mRed;
+
+    if(mCurrSequence.delay == 0xFFFF)
+    {
+        if(!out->get())
+            out->reset();
+
+        mTickCount = 0;
+        return;
+    }
+
+    if(mTickCount > 7)
+        mTickCount = 0;
+
+    if(mLastLick > HAL_GetTick())
         return;
 
-    if(HAL_GetTick() < mFlashOffTick)
-        return;
+    mLastLick = HAL_GetTick() + mCurrSequence.delay;
 
-    reset();
-    mEnabled = false;
+    if(((mCurrSequence.flashByte >> mTickCount) & 0x01) == 0x01)
+        out->set();
+    else
+        out->reset();
+
+    mTickCount++;
 }

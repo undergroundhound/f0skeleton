@@ -10,22 +10,34 @@
 
 #include "output.h"
 
-#define BILED2_FLASH_GREEN 0
-#define BILED2_FLASH_RED 1
+#define LED_RED     0
+#define LED_GREEN   1
+
+typedef struct{
+    uint16_t delay;
+    uint8_t flashByte;
+} sLEDflash_t;
+
+const sLEDflash_t LED_OFF        = {0xFFFF, 0b00000000};
+const sLEDflash_t LED_HEARTBEAT  = {125,    0b10100000};
+const sLEDflash_t LED_FAST_FLASH = {1000,     0b10101010};
+const sLEDflash_t LED_SLOW_FLASH = {250,    0b11001100};
 
 class BiLED2
 {
     cOutput *mGreen;
     cOutput *mRed;
 
-    bool mEnabled;
-    uint32_t mFlashOffTick;
+    sLEDflash_t mCurrSequence;
+    uint8_t mLedColour;
+    uint8_t mTickCount;
+    uint32_t mLastLick;
 
-    void reset();
 public:
     BiLED2(cOutput *green, cOutput *red);
 
-    void flash(uint8_t flash, uint32_t timeout);
+    void setFlash(sLEDflash_t seqeunce, uint8_t colour);
+    void off();
     void run();
 };
 
