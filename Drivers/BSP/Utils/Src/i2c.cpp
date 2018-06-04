@@ -41,23 +41,19 @@ void I2C::init()
     {
       _Error_Handler(__FILE__, __LINE__);
     }
-
-    HAL_Delay(10);
-
-    printf("devReady: %d\n", HAL_I2C_IsDeviceReady(&mHandle, 0xA0, 5, 0xFFFF));
 }
 
 HAL_StatusTypeDef I2C::write(uint16_t addr,uint8_t *data, uint8_t len)
 {
     uint16_t deviceAddr = 0xA0;
-    HAL_Delay(10);
+//    HAL_Delay(10);
     return HAL_I2C_Mem_Write(&mHandle, deviceAddr, addr,I2C_MEMADD_SIZE_8BIT, data, len, 0xFFFFFF);
 }
 
 HAL_StatusTypeDef I2C::read(uint16_t addr,uint8_t *data, uint8_t len)
 {
     uint16_t deviceAddr = 0xA0;
-    HAL_Delay(10);
+//    HAL_Delay(10);
     return HAL_I2C_Mem_Read(&mHandle, deviceAddr, addr,I2C_MEMADD_SIZE_8BIT, data, len, 0xFFFFFF);
 }
 

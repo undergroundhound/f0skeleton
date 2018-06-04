@@ -143,8 +143,6 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
 
 void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
 {
-
-    printf("was hier\n");
   GPIO_InitTypeDef GPIO_InitStruct;
   if(hi2c->Instance==I2C1)
   {

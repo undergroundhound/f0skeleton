@@ -15,11 +15,9 @@
 #define NVM_ADDR    0
 
 typedef struct{
-	uint8_t rxAddr[5];  //11
-	uint8_t txAddr[5];  //16
-	uint8_t id;         //1
+	uint8_t netId;      //1
+	uint8_t id;         //2
 	uint8_t channel;    //2
-	uint8_t slaveIds[4];//6
 }sNvm_t;
 
 class NVM {

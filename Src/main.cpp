@@ -84,51 +84,25 @@ DeviceController deviceController = DeviceController();
 
 cADC *adc;
 
-static uint8_t deviceAddr[4] =
-{ 0x3E, 0x7C, 0x8D, 0x2E };
-
 /*!
  * Debug entries
  */
 
-void printAddr()
+void getIds(uint8_t *netId, uint8_t *id)
 {
     sNvm_t nvm;
     mNVM->get(&nvm);
-
-    PrintInfo("TX Address");
-    for (uint8_t idx = 0; idx < 5; idx++)
-        printf("%02X ", nvm.txAddr[idx]);
-    printf("\n");
-    PrintInfo("RX Address");
-    for (uint8_t idx = 0; idx < 5; idx++)
-        printf("%02X ", nvm.rxAddr[idx]);
-    printf("\n");
-}
-
-void charToHex(char *characters, uint8_t *hexData, uint8_t len)
-{
-    char byte[2];
-    uint8_t charIdx = 0;
-    for (uint8_t idx = 0; idx < len; idx++)
-    {
-        memcpy(byte, &characters[charIdx], 2);
-        charIdx += 2;
-        hexData[idx] = (uint8_t) strtol(byte, NULL, 16);
-    }
-}
-
-uint8_t getId()
-{
-    sNvm_t nvm;
-    mNVM->get(&nvm);
-    uint8_t id = nvm.id;
-    return id;
+    *netId = nvm.netId;
+    *id = nvm.id;
 }
 
 void printId()
 {
-    uint8_t id = getId();
+    uint8_t id = 0;
+    uint8_t netId = 0;
+    getIds(&netId, &id);
+    PrintInfo("Network ID");
+    printf("0x%02X\n", netId);
     PrintInfo("Device ID");
     printf("0x%02X\n", id);
 }
@@ -143,17 +117,7 @@ void printChannel()
 
 void nrfIrq(void)
 {
-//    if(status & (1 << MAX_RT))
-//    uint8_t status = nrf.getStatus();
-//        nrf.setRegister(STATUS, (1 << MAX_RT));
-
-
     nodeInterface->irq(nrf.getStatus());
-//    printf("%02X\n", nrf.getStatus());
-//    if(nrf.dataReady())
-//    {
-//        nodeInterface->dataAvailable(true);
-//    }
 }
 
 void buttonIrq()
@@ -210,16 +174,16 @@ int main(void)
 
     {
         sNvm_t nvm;
-
-        printId();
-        printChannel();
-        printAddr();
         mNVM->get(&nvm);
+
         PrintInfo("nRF Config");
-        if(nodeInterface->configure(nvm.channel, 4, nvm.txAddr, nvm.rxAddr, nvm.id) == HAL_OK)
+        if(nodeInterface->configure(nvm.channel, 4, nvm.netId, nvm.id) == HAL_OK)
             printf(GREEN("OK\n"));
         else
             printf(RED("Fail\n"));
+
+        printId();
+        printChannel();
     }
 
 
@@ -301,22 +265,44 @@ void Id(uint8_t argc, char **argv)
         printf("0 < id < 255\n");
         return;
     }
-
-    uint8_t addr[5];
-    memcpy(addr, deviceAddr, 4);
-    addr[4] = (uint8_t) id;
-    memcpy(nvm.rxAddr, addr, 5);
-
-    addr[4] = 0;
-    memcpy(nvm.txAddr, addr, 5);
-
-    nvm.id = (uint8_t) id;
+    nvm.id = (uint8_t)id;
     mNVM->set(&nvm);
     printId();
-    printAddr();
 }
 sTermEntry_t idEntry =
 { "id", "Set device id", Id };
+
+void netId(uint8_t argc, char **argv)
+{
+    if (argc == 1)
+    {
+        printId();
+        return;
+    }
+
+    if (argc != 2)
+    {
+        printf("id <id[1]>");
+        return;
+    }
+
+    sNvm_t nvm;
+    mNVM->get(&nvm);
+
+    int id = atoi(argv[1]);
+
+    if ((id < 0) || (id > 255))
+    {
+        printf("0 < id < 255\n");
+        return;
+    }
+
+    nvm.netId = (uint8_t)id;
+    mNVM->set(&nvm);
+    printId();
+}
+sTermEntry_t netIdEntry =
+{ "nid", "Set Network id", netId };
 
 void Channel(uint8_t argc, char **argv)
 {
@@ -356,49 +342,6 @@ void DeviceDebug(uint8_t argc, char **argv)
 }
 sTermEntry_t deviceEntry =
 { "d", "Device debug", DeviceDebug };
-
-void Address(uint8_t argc, char **argv)
-{
-    if (argc == 1)
-    {
-        printAddr();
-        return;
-    }
-
-    if (argc != 3)
-    {
-        printf("addr <(t)x/(r)x> <addr[5]>");
-        return;
-    }
-
-    sNvm_t nvm;
-    mNVM->get(&nvm);
-
-    if (strlen(argv[2]) != 10)
-    {
-        printf("5 bytes for addr\n");
-        return;
-    }
-
-    uint8_t addr[5];
-    charToHex(argv[2], addr, 5);
-
-    char txRx = argv[1][0];
-    if (txRx == 't')
-    {
-        memcpy(nvm.txAddr, addr, 5);
-    }
-    else if (txRx == 'r')
-    {
-        memcpy(nvm.rxAddr, addr, 5);
-    }
-    else
-        return;
-
-    mNVM->set(&nvm);
-}
-sTermEntry_t addrEntry =
-{ "addr", "Set radio addr", Address };
 
 void NRFinfo(uint8_t argc, char **argv)
 {

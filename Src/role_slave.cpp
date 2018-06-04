@@ -112,15 +112,15 @@ void RoleSlave::debug(uint8_t argc, char **argv)
 void RoleSlave::run()
 {
     //reset output after a second
-//    for(uint8_t idx=0; idx < 4; idx++)
-//    {
-//        if(timeOuts[idx] && timeOuts[idx] < HAL_GetTick())
-//        {
-//            printf("output[%d] reset\n", idx);
-//            outputs[idx]->reset();
-//            timeOuts[idx] = 0;
-//        }
-//    }
+    for(uint8_t idx=0; idx < 4; idx++)
+    {
+        if(timeOuts[idx] && timeOuts[idx] < HAL_GetTick())
+        {
+            printf("output[%d] reset\n", idx);
+            outputs[idx]->reset();
+            timeOuts[idx] = 0;
+        }
+    }
 
     if(mNodeInterface->runRx(rxData))
     {
@@ -134,6 +134,15 @@ void RoleSlave::run()
 
         switch(pmsg.type)
         {
+            case PMSG_TYPE_UNKNOWN:
+            {
+                printf("eks hier\n");
+//                if(pmsg.tag == 0 && pmsg.data[0] == 0 && pmsg.data[1] == 0)
+//                {
+                    mNodeInterface->sendToMaster((uint8_t *) &pmsg);
+//                }
+            }
+                break;
             case PMSG_TYPE_SET:
             {
                 switch(pmsg.tag)

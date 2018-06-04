@@ -67,7 +67,10 @@ void RoleMaster::getRegister(uint8_t slave, uint8_t reg, uint8_t *value)
     mNodeInterface->sendToNode(slave, (uint8_t *)&pmsg);
 
     int timeout = 1000;
-    while(!mNodeInterface->runRx((uint8_t *)&pmsg) && timeout--);
+    while(!mNodeInterface->runRx((uint8_t *)&pmsg) && timeout--)
+    {
+        HAL_Delay(5);
+    }
 
     if(!timeout)
         return;
@@ -102,6 +105,7 @@ void RoleMaster::buttonCallback(uint8_t state)
             break;
     }
 }
+#include <stdlib.h>
 
 void RoleMaster::debug(uint8_t argc, char **argv)
 {
@@ -112,7 +116,7 @@ void RoleMaster::debug(uint8_t argc, char **argv)
         return;
     }
 
-    if(argc == 2)
+    if(argc > 1 )
     {
         //single char
         if(strlen(argv[1]) == 1)
@@ -120,6 +124,21 @@ void RoleMaster::debug(uint8_t argc, char **argv)
             char c = argv[1][0];
             switch(c)
             {
+                case 'r':
+                {
+                    uint8_t regVal = atoi(argv[2]);
+                    getRegister(1, P_REG_ADC1, &regVal);
+                    printf("1: %d\n", regVal);
+
+                    regVal = 50;
+                    setRegister(1, P_REG_ADC1, regVal);
+                    printf("2: %d\n", regVal);
+
+                    regVal = 0;
+                    getRegister(1, P_REG_ADC1, &regVal);
+                    printf("3: %d\n", regVal);
+                }
+                break;
                 case 'p':
                 {
                     uint8_t status = 0;
@@ -182,9 +201,9 @@ void RoleMaster::run()
     if(mNodeInterface->runRx(rxData))
     {
         PrintInfo("Master data in: ");
-          for (uint8_t idx = 0; idx < 4; idx++)
-              printf("%02X ", rxData[idx]);
-          printf("\n");
+        for (uint8_t idx = 0; idx < 4; idx++)
+            printf("%02X ", rxData[idx]);
+        printf("\n");
     }
     if(longPress)
     {

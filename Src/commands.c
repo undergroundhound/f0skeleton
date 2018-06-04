@@ -5,7 +5,7 @@ extern const sTermEntry_t hEntry;
 extern const sTermEntry_t helpEntry;
 extern const sTermEntry_t rebootEntry;
 extern const sTermEntry_t deviceEntry;
-extern const sTermEntry_t addrEntry;
+extern const sTermEntry_t netIdEntry;
 extern const sTermEntry_t idEntry;
 extern const sTermEntry_t channelEntry;
 extern const sTermEntry_t nrfEntry;
@@ -16,8 +16,8 @@ const sTermEntry_t *term_entries[] =
         &helpEntry,
         &rebootEntry,
         &deviceEntry,
-        &addrEntry,
         &idEntry,
+        &netIdEntry,
         &channelEntry,
         &nrfEntry,
         0
