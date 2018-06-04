@@ -12,6 +12,7 @@
 #include "spi.h"
 #include "output.h"
 
+#define NRF24_DATA_LEN 4
 #define nrf24_ADDR_LEN 5
 #define nrf24_CONFIG ((1<<EN_CRC)|(0<<CRCO))
 
@@ -28,19 +29,19 @@ class NRF24L01 {
 
 	void readRegister(uint8_t reg, uint8_t *value, uint8_t len);
 	void writeRegister(uint8_t reg, uint8_t *value, uint8_t len);
-	void setRegister(uint8_t reg, uint8_t value);
 	void getRegister(uint8_t reg, uint8_t *value);
 
 public:
 	NRF24L01();
 	virtual ~NRF24L01();
+	void setRegister(uint8_t reg, uint8_t value);
 
 	HAL_StatusTypeDef init(cSPI *spi, cOutput *csn, cOutput *ce);
 	HAL_StatusTypeDef config(uint8_t channel, uint8_t pay_lenght);
 
 	uint8_t retransmissionCount();
-	uint8_t readStatus();
 	uint8_t getStatus();
+	uint8_t getConfig();
 	uint8_t lastMessageStatus();
     uint8_t rxFifoEmpty();
 
@@ -53,6 +54,7 @@ public:
 	void send(uint8_t *value);
 	uint8_t isSending();
 
+	void flushRx();
 	void powerUpRx();
 	void powerUpTx();
 	void powerDown();

@@ -87,10 +87,10 @@ void HW_SetupIrq(GPIO_TypeDef *port, uint32_t pin, uint32_t gpioMode, uint32_t g
     GPIO_InitStruct.Pin = pin;
     GPIO_InitStruct.Mode = gpioMode;
     GPIO_InitStruct.Pull = gpioPull;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(port, &GPIO_InitStruct);
 
-    HW_GPIO_SetIrq(port, pin, 0x05, irq);
+    HW_GPIO_SetIrq(port, pin, 0x01, irq);
 }
 
 

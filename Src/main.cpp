@@ -141,11 +141,19 @@ void printChannel()
     printf("0x%02X\n", nvm.channel);
 }
 
-
 void nrfIrq(void)
 {
-    if(nrf.dataReady())
-        nodeInterface->dataAvailable(true);
+//    if(status & (1 << MAX_RT))
+//    uint8_t status = nrf.getStatus();
+//        nrf.setRegister(STATUS, (1 << MAX_RT));
+
+
+    nodeInterface->irq(nrf.getStatus());
+//    printf("%02X\n", nrf.getStatus());
+//    if(nrf.dataReady())
+//    {
+//        nodeInterface->dataAvailable(true);
+//    }
 }
 
 void buttonIrq()
@@ -173,7 +181,7 @@ int main(void)
     printf("welcome!\n");
 
     PrintInfo("SPI1");
-    if (spi.init(SPI1, 100000) == HAL_OK)
+    if (spi.init(SPI1, 4000000) == HAL_OK)
         printf(GREEN("OK\n"));
     else
         printf(RED("Fail\n"));
@@ -193,7 +201,7 @@ int main(void)
     if(nrf.init(&spi, csn, ce) == HAL_OK)
     {
         printf(GREEN("OK\n"));
-        HW_SetupIrq(GPIOB, GPIO_PIN_1, GPIO_MODE_IT_FALLING, GPIO_NOPULL, nrfIrq);
+        HW_SetupIrq(GPIOB, GPIO_PIN_1, GPIO_MODE_IT_FALLING, GPIO_PULLUP, nrfIrq);
     }
     else
         printf(RED("Fail\n"));
@@ -239,12 +247,8 @@ int main(void)
     BiLED2 led4(&led4green, &led4red);
     BiLED2 led5(&led5green, &led5red);
 
-    led1.flash(BILED2_FLASH_GREEN, 500);
-    led2.flash(BILED2_FLASH_GREEN, 600);
-    led3.flash(BILED2_FLASH_GREEN, 700);
-    led4.flash(BILED2_FLASH_GREEN, 800);
-    led5.flash(BILED2_FLASH_GREEN, 900);
 
+    led1.setFlash(LED_HEARTBEAT, LED_GREEN);
     BiLED2 *leds[5];
     leds[0] = &led1;
     leds[1] = &led2;
@@ -254,26 +258,21 @@ int main(void)
 
     deviceController.init(nodeInterface, leds, 5);
 
-//    statusLED->setFlash(LED_GREEN, LED_HEARTBEAT);
-
 //    adc = new cADC();
 //    adc->init();
 //    nrf.powerUpRx();
 //    printf("adc [0]: %d\n", adc->sampleChannel(4));
 
 
-
-
     while (1)
     {
-//        static uint8_t ledCount = 0;
-//        if(ledCount > 4)
-//            ledCount = 0;
+        static uint8_t ledCount = 0;
+        if(ledCount > 4)
+            ledCount = 0;
+        leds[ledCount++]->run();
 
-        for(uint8_t ledCount = 0; ledCount < 5; ledCount++)
-            leds[ledCount]->run();
-//        buttonLaunch->run();
-//        deviceController.run();
+        buttonLaunch->run();
+        deviceController.run();
         terminal_run();
     }
 }
@@ -351,6 +350,13 @@ void Channel(uint8_t argc, char **argv)
 sTermEntry_t channelEntry =
 { "chan", "Set WiFi channel", Channel };
 
+void DeviceDebug(uint8_t argc, char **argv)
+{
+    deviceController.debug(argc, argv);
+}
+sTermEntry_t deviceEntry =
+{ "d", "Device debug", DeviceDebug };
+
 void Address(uint8_t argc, char **argv)
 {
     if (argc == 1)
@@ -394,49 +400,18 @@ void Address(uint8_t argc, char **argv)
 sTermEntry_t addrEntry =
 { "addr", "Set radio addr", Address };
 
-void SendPacket(uint8_t argc, char **argv)
+void NRFinfo(uint8_t argc, char **argv)
 {
-    printf("this now does nothing.\n");
-//   if(argc == 1)
-//   {
-//       for(uint8_t idx = 0; idx < 4; idx++)
-//       {
-//           printf("DRV %d: ", idx+1);
-//           outputs[idx]->get() ? printf("SET") : printf("RESET");
-//           printf("\n");
-//       }
-//   }
-//
-//   if(argc == 3)
-//   {
-//       int idx = atoi(argv[1]);
-//       if(idx > 4 || idx < 0)
-//       {
-//           printf(RED("1 < number < 4\n"));
-//           return;
-//       }
-//       idx--;
-//
-//       uint8_t set = atoi(argv[2]);
-//       if(set == 1)
-//       {
-//           printf("set ");
-//           outputs[idx]->set();
-//       }
-//       else if(set == 0)
-//       {
-//           printf("reset ");
-//           outputs[idx]->reset();
-//       }
-//       else
-//       {
-//           printf(RED("0 - reset\n1 - set\n"));
-//       }
-//       printf("DRV %d\n", idx+1);
-//   }
+    uint8_t status = nrf.getStatus();
+    PrintInfo("NRF Status");
+    printf("0x%02X\n", status);
+
+    uint8_t cfg = nrf.getConfig();
+    PrintInfo("NRF Config");
+    printf("0x%02X\n", cfg);
 }
-sTermEntry_t sendEntry =
-{ "out", "output <number> <state>", SendPacket };
+sTermEntry_t nrfEntry =
+{ "nrf", "nrf info", NRFinfo };
 
 /**
  * @brief  This function is executed in case of error occurrence.

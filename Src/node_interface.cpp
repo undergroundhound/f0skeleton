@@ -10,14 +10,14 @@
 NodeInterface::NodeInterface(NRF24L01 *nrfRadio) : mNRF(nrfRadio)
 {
     mInitialized = true;
-    mDataAvailable = false;
     mPayLoadLen = 4;
     mNodeCount = 0;
     memset(mNodes, 0xFF, MAX_NODES);
 
     mId = 0;
     mRole = NODE_ROLE_UNKNOWN;
-
+    mState = NODE_STATE_UNKNOWN;
+    mCurrObj = 0;
 }
 
 NodeInterface::~NodeInterface()
@@ -56,11 +56,6 @@ void NodeInterface::listen()
     mNRF->powerUpRx();
 }
 
-void NodeInterface::dataAvailable(bool state)
-{
-    mDataAvailable = state;
-}
-
 HAL_StatusTypeDef NodeInterface::pingNode(uint8_t *addr)
 {
     //set payload size to zero
@@ -70,18 +65,18 @@ HAL_StatusTypeDef NodeInterface::pingNode(uint8_t *addr)
     mNRF->txAddress(addr);
     HAL_Delay(5);
 
-    mNRF->send(data);
-    uint32_t timeOut = HAL_GetTick() + 100;
-    while(mNRF->isSending() && (timeOut > HAL_GetTick()))
-        HAL_Delay(2);
+//    uint32_t timeOut = HAL_GetTick() + 100;
+//    while(send(data, 4) && (timeOut > HAL_GetTick()))
+//        HAL_Delay(2);
+//
+//    if(timeOut < HAL_GetTick())
+//        return HAL_TIMEOUT;
 
-    if(timeOut < HAL_GetTick())
-        return HAL_TIMEOUT;
+    return send(data, 4, 10);
+//    if(send(data, 4, 10))
+//        return HAL_OK;
 
-    if(mNRF->lastMessageStatus() == NRF24_TRANSMISSON_OK)
-        return HAL_OK;
-
-    return HAL_ERROR;
+//    return HAL_ERROR;
 }
 
 HAL_StatusTypeDef NodeInterface::pingNodes(uint8_t startAddr, uint8_t endAddr, uint8_t *state)
@@ -107,6 +102,7 @@ HAL_StatusTypeDef NodeInterface::pingNodes(uint8_t startAddr, uint8_t endAddr, u
 
         if(status == HAL_OK)
         {
+            printf("ping node: %d reg\n", startAddr);
             s |= (1 << mNodeCount);
             mNodes[mNodeCount++] = startAddr;
         }
@@ -125,29 +121,30 @@ HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t nodeId, uint8_t *data)
     devAddr[4] = nodeId;
 
     mNRF->powerUpTx();
+    HAL_Delay(5);
     //set payload size to zero
     mNRF->txAddress(devAddr);
 
-    mNRF->send(data);
-    uint32_t timeOut = HAL_GetTick() + 1;
-    while(mNRF->isSending() && (timeOut > HAL_GetTick()));
+//    HAL_Delay(10);
+//    mNRF->send(data);
+//    uint32_t timeOut = HAL_GetTick() + 1;
+//    while(mNRF->isSending() && (timeOut > HAL_GetTick()));
+//
+    HAL_Delay(5);
+//    mDataAvailable = false;
+
+//    if(timeOut < HAL_GetTick())
+//        return HAL_TIMEOUT;
+
+    HAL_StatusTypeDef status = send(data, 4, 10);
 
     mNRF->powerUpRx();
-    mDataAvailable = false;
-
-    if(timeOut < HAL_GetTick())
-        return HAL_TIMEOUT;
-
-
 //    if(mNRF->lastMessageStatus() == NRF24_TRANSMISSON_OK)
 //    {
-//
-////        return HAL_OK;
+//        return HAL_OK;
 //    }
 
-
-
-    return HAL_ERROR;
+    return status;
 }
 
 HAL_StatusTypeDef NodeInterface::sendToNodes(uint8_t *data)
@@ -182,13 +179,124 @@ uint8_t NodeInterface::getNodes(uint8_t *nodes)
     return mNodeCount;
 }
 
+void NodeInterface::irq(uint8_t status)
+{
+    //transmit
+    if(status & (1 << RX_DR))
+    {
+//        printf("di\n");
+        mNRF->setRegister(STATUS, (1 << RX_DR));
+        mNRF->getData(mRxData);
+        mDataAvailable = true;
+    }
+
+    //fail
+    if(status & (1 << MAX_RT))
+    {
+        mNRF->setRegister(STATUS, (1 << MAX_RT));
+        if(mCurrObj)
+        {
+            mCurrObj->status = HAL_ERROR;
+            mState = NODE_STATE_RESULT;
+        }
+    }
+
+    //reg
+    if(status & (1 << TX_DS))
+    {
+        mNRF->setRegister(STATUS, (1 << TX_DS));
+        if(mCurrObj)
+        {
+            mCurrObj->status = HAL_OK;
+            mState = NODE_STATE_RESULT;
+        }
+//        mState = NODE_STATE_RECEIVE;
+    }
+}
+
 uint8_t NodeInterface::runRx(uint8_t *data)
 {
-    if (mDataAvailable)
+    if(!mDataAvailable)
+        return 0;
+
+    mDataAvailable = false;
+    memcpy(data, mRxData, NRF24_DATA_LEN);
+    return 1;
+}
+
+HAL_StatusTypeDef NodeInterface::send(uint8_t *data, uint8_t len, uint32_t timeout)
+{
+    if(len != 4)
+        return HAL_ERROR;
+
+    sNodeObj_t obj;
+    mCurrObj = &obj;
+
+    memcpy(mCurrObj->dataOut, data, len);
+    mState = NODE_STATE_SEND;
+
+    mCurrObj->busy = true;
+    while(mCurrObj->busy && timeout--)
     {
-        mDataAvailable = false;
-        mNRF->getData(data);
-        return 1;
+        runTx();
+        HAL_Delay(5);
     }
-    return 0;
+
+    if(!timeout)
+        return HAL_TIMEOUT;
+
+    mCurrObj = 0;
+
+    if(obj.status == HAL_OK)
+        return HAL_OK;
+
+    return HAL_ERROR;
+}
+void NodeInterface::runTx()
+{
+    switch (mState)
+    {
+        case NODE_STATE_IDLE:
+            break;
+        case NODE_STATE_SEND:
+        {
+            if(!mCurrObj)
+            {
+                mState = NODE_STATE_IDLE;
+                return;
+            }
+            if(mNRF->getStatus() & (1 << MAX_RT))
+                mNRF->setRegister(STATUS, (1 << MAX_RT));
+
+            mNRF->send(mCurrObj->dataOut);
+            mState = NODE_STATE_WAIT;
+        }
+        break;
+        case NODE_STATE_WAIT:
+        {
+            if(!mCurrObj)
+            {
+                mState = NODE_STATE_IDLE;
+                return;
+            }
+        }
+        break;
+
+        case NODE_STATE_RESULT:
+        {
+            if(!mCurrObj)
+            {
+                mState = NODE_STATE_IDLE;
+                return;
+            }
+            printf("result %d\n", mCurrObj->status);
+            mCurrObj->busy = false;
+        }
+        break;
+
+
+        default:
+            mState = NODE_STATE_IDLE;
+            break;
+    }
 }

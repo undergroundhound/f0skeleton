@@ -66,8 +66,6 @@ void RoleMaster::getRegister(uint8_t slave, uint8_t reg, uint8_t *value)
 
     mNodeInterface->sendToNode(slave, (uint8_t *)&pmsg);
 
-    mNodeInterface->dataAvailable(false);
-
     int timeout = 1000;
     while(!mNodeInterface->runRx((uint8_t *)&pmsg) && timeout--);
 
@@ -105,45 +103,89 @@ void RoleMaster::buttonCallback(uint8_t state)
     }
 }
 
+void RoleMaster::debug(uint8_t argc, char **argv)
+{
+    if(argc == 1)
+    {
+        printf(GREEN_B("Master Device\n"));
+        printf("p\t- ping nodes\n");
+        return;
+    }
+
+    if(argc == 2)
+    {
+        //single char
+        if(strlen(argv[1]) == 1)
+        {
+            char c = argv[1][0];
+            switch(c)
+            {
+                case 'p':
+                {
+                    uint8_t status = 0;
+                    mNodeInterface->pingNodes(1, MAX_NODES, &status);
+
+                    uint8_t nodes[MAX_NODES];
+                    uint8_t nodeCount = mNodeInterface->getNodes(nodes);
+                    PrintInfo("# of Nodes");
+                    printf("%02d\n", nodeCount);
+                    for(uint8_t idx = 0; idx < nodeCount; idx++)
+                    {
+                        PrintInfo("Node");
+                        printf("%d\n", nodes[idx]);
+                    }
+                }
+                break;
+                case 's':
+                {
+                    PrintInfo("Send to node");
+                    printf("1\n");
+                    uint8_t data[4] = {0x00, 0x01, 0x02, 0x03};
+
+                    mNodeInterface->sendToNode(1, data);
+                }
+                break;
+
+                default:
+                    break;
+            }
+        }
+        return;
+    }
+}
 
 void RoleMaster::checkSlaves()
 {
     if(HAL_GetTick() > nextPoll)
     {
-        nextPoll = HAL_GetTick() + 1000;
-        uint8_t status = 0;
-        mNodeInterface->pingNodes(1, MAX_NODES, &status);
-        printf("node state: %02X\n", status);
-        if(status)
+        nextPoll = HAL_GetTick() + 5000;
+        static uint8_t status = 0;
+        uint8_t newStatus = 0;
+        mNodeInterface->pingNodes(1, MAX_NODES, &newStatus);
+        printf("node state: %02X : %02X\n", status, newStatus);
+        if(status != newStatus)
         {
-            mLeds[1]->flash(BILED2_FLASH_GREEN, 200);
-            if(status > 1)
-                mLeds[2]->flash(BILED2_FLASH_GREEN, 200);
+            mLeds[1]->setFlash(LED_FAST_FLASH, LED_RED);
+            mLeds[2]->setFlash(LED_FAST_FLASH, LED_RED);
+            status = newStatus;
+            if(status & 0x01)
+                mLeds[1]->setFlash(LED_HEARTBEAT, LED_GREEN);
+            if(status & 0x02)
+                mLeds[2]->setFlash(LED_HEARTBEAT, LED_GREEN);
         }
     }
-
-//    if(pingNode(devAddr) == HAL_OK)
-//    {
-//        mLedR.reset();
-//        mLedG.set();
-//    }
-//    else
-//    {
-//        mLedG.reset();
-//        mLedR.set();
-//    }
 }
 
 void RoleMaster::run()
 {
-    checkSlaves();
-//    if(mNodeInterface->runRx(rxData))
-//    {
-//        PrintInfo("Master data in: ");
-//          for (uint8_t idx = 0; idx < 4; idx++)
-//              printf("%02X ", rxData[idx]);
-//          printf("\n");
-//    }
+//    checkSlaves();
+    if(mNodeInterface->runRx(rxData))
+    {
+        PrintInfo("Master data in: ");
+          for (uint8_t idx = 0; idx < 4; idx++)
+              printf("%02X ", rxData[idx]);
+          printf("\n");
+    }
     if(longPress)
     {
         longPress = 0;
@@ -151,7 +193,7 @@ void RoleMaster::run()
         if(!mArmed)
         {
             // arm now
-            mLeds[0]->flash(BILED2_FLASH_RED, 1000);
+            mLeds[0]->setFlash(LED_FAST_FLASH, LED_RED);
             rocketCount= 0;
             mArmed = 1;
             printf(RED("ARMED\n"));
@@ -159,7 +201,7 @@ void RoleMaster::run()
         }
         else
         {
-            mLeds[0]->flash(BILED2_FLASH_GREEN, 1000);
+            mLeds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
             mArmed = 0;
             printf(GREEN("!ARMED\n"));
             armSlaves(0);

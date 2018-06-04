@@ -7,6 +7,8 @@
 
 #include "nrf24L01.h"
 
+#include <string.h>
+
 /*-------- Private Functions ----------------------------------------------*/
 void NRF24L01::readRegister(uint8_t reg, uint8_t *value, uint8_t len)
 {
@@ -86,17 +88,6 @@ HAL_StatusTypeDef NRF24L01::init(cSPI *spi, cOutput *csn, cOutput *ce) //: mSPI(
 
 
 
-uint8_t NRF24L01::readStatus()
-{
-    uint8_t status = 0;
-
-    mCSN->reset();
-    mSPI->read(&status, 1);
-    mCSN->set();
-
-    return status;
-}
-
 HAL_StatusTypeDef NRF24L01::config(uint8_t channel, uint8_t pay_length)
 {
     if (!mInitialized)
@@ -122,7 +113,7 @@ HAL_StatusTypeDef NRF24L01::config(uint8_t channel, uint8_t pay_length)
     setRegister(RX_PW_P5, 0x00); // Pipe not used
 
     // 1 Mbps, TX gain: 0dbm
-    setRegister(RF_SETUP, (DATARATE_1Mbps << RF_DR) | (POWER_0dbm << RF_PWR));
+    setRegister(RF_SETUP, (DATARATE_250kbps << RF_DR) | (POWER_m6dbm << RF_PWR));
 
     // CRC enable, 1 byte CRC length
     setRegister(CONFIG, (1<<EN_CRC)|(0<<CRCO));
@@ -201,13 +192,17 @@ void NRF24L01::getData(uint8_t *data)
     mSPI->writeOpCode(R_RX_PAYLOAD);
 
     /* Read payload */
-    mSPI->read(data, mPayLoadLen);
+    uint8_t buf[4];
+    mSPI->read(buf, NRF24_DATA_LEN);
+    memcpy(data, buf, NRF24_DATA_LEN);
 
     /* Pull up chip select */
     mCSN->set();
 
     /* Reset status register */
     setRegister(STATUS, (1 << RX_DR));
+
+    flushRx();
 }
 
 uint8_t NRF24L01::retransmissionCount()
@@ -264,6 +259,7 @@ uint8_t NRF24L01::isSending()
     /* if sending successful (TX_DS) or max retries exceded (MAX_RT). */
     if ((status & ((1 << TX_DS) | (1 << MAX_RT))))
     {
+        setRegister(STATUS, ((1 << TX_DS) | (1 << MAX_RT)));
         return 0; /* false */
     }
 
@@ -281,6 +277,14 @@ uint8_t NRF24L01::getStatus()
     return rv;
 }
 
+uint8_t NRF24L01::getConfig()
+{
+    uint8_t rv;
+
+    getRegister(CONFIG, &rv);
+    return rv;
+}
+
 uint8_t NRF24L01::lastMessageStatus()
 {
     uint8_t rv;
@@ -290,12 +294,14 @@ uint8_t NRF24L01::lastMessageStatus()
     /* Transmission went OK */
     if ((rv & ((1 << TX_DS))))
     {
+        setRegister(STATUS, (1 << TX_DS));
         return NRF24_TRANSMISSON_OK;
     }
     /* Maximum retransmission count is reached */
     /* Last message probably went missing ... */
     else if ((rv & ((1 << MAX_RT))))
     {
+        setRegister(STATUS, (1 << MAX_RT));
         return NRF24_MESSAGE_LOST;
     }
     /* Probably still sending ... */
@@ -305,11 +311,16 @@ uint8_t NRF24L01::lastMessageStatus()
     }
 }
 
-void NRF24L01::powerUpRx()
+void NRF24L01::flushRx()
 {
     mCSN->reset();
     mSPI->writeOpCode(FLUSH_RX);
     mCSN->set();
+}
+
+void NRF24L01::powerUpRx()
+{
+    flushRx();
 
     setRegister(STATUS, (1 << RX_DR) | (1 << TX_DS) | (1 << MAX_RT));
 

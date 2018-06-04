@@ -27,6 +27,7 @@ public:
     {
     }
 
+    virtual void debug(uint8_t argc, char **argv) = 0;
     virtual void buttonCallback(uint8_t state) = 0;
     virtual void run() = 0;
 };

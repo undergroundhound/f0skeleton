@@ -75,7 +75,7 @@ HAL_StatusTypeDef cSPI::write(uint8_t *data, uint8_t len)
 
 HAL_StatusTypeDef cSPI::read(uint8_t *rxData, uint8_t len)
 {
-	return HAL_SPI_Receive(&hspi, (uint8_t*) rxData, len, 100);
+	return HAL_SPI_Receive(&hspi, (uint8_t*) rxData, len, 2000);
 }
 
 HAL_StatusTypeDef cSPI::writeOpCode(uint8_t opCode)

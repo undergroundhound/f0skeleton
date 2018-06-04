@@ -30,6 +30,8 @@ class RoleMaster : public Role
 
 public:
     RoleMaster(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount);
+
+    void debug(uint8_t argc, char **argv);
     void buttonCallback(uint8_t state);
     void run();
 };

@@ -72,23 +72,66 @@ void RoleSlave::buttonCallback(uint8_t state)
         }
 }
 
+void RoleSlave::debug(uint8_t argc, char **argv)
+{
+    if(argc == 1)
+        {
+            printf(GREEN_B("Slave Device\n"));
+            printf("p\t- ping master\n");
+            return;
+        }
+
+        if(argc == 2)
+        {
+            //single char
+            if(strlen(argv[1]) == 1)
+            {
+                char c = argv[1][0];
+                switch(c)
+                {
+                    case 'p':
+                    {
+                        uint8_t buf[4];
+                        memset(buf, 0x00, 4);
+                        HAL_StatusTypeDef status = mNodeInterface->sendToMaster(buf);
+                        PrintInfo("master");
+                        if(status == HAL_OK)
+                            printf(GREEN("OK\n"));
+                        else
+                            printf(RED("FAIL\n"));
+                    }
+                    break;
+                    default:
+                        break;
+                }
+            }
+            return;
+        }
+}
+
 void RoleSlave::run()
 {
     //reset output after a second
-    for(uint8_t idx=0; idx < 4; idx++)
-    {
-        if(timeOuts[idx] && timeOuts[idx] < HAL_GetTick())
-        {
-            printf("output[%d] reset\n", idx);
-            outputs[idx]->reset();
-            timeOuts[idx] = 0;
-        }
-    }
+//    for(uint8_t idx=0; idx < 4; idx++)
+//    {
+//        if(timeOuts[idx] && timeOuts[idx] < HAL_GetTick())
+//        {
+//            printf("output[%d] reset\n", idx);
+//            outputs[idx]->reset();
+//            timeOuts[idx] = 0;
+//        }
+//    }
 
     if(mNodeInterface->runRx(rxData))
     {
         sPmsg_t pmsg;
         memcpy(&pmsg, rxData, 4);
+
+        PrintInfo("Slave data in: ");
+        for (uint8_t idx = 0; idx < 4; idx++)
+            printf("%02X ", rxData[idx]);
+        printf("\n");
+
         switch(pmsg.type)
         {
             case PMSG_TYPE_SET:
@@ -101,11 +144,11 @@ void RoleSlave::run()
                         arm(armed);
                         if(armed)
                         {
-                            mLeds[0]->flash(BILED2_FLASH_RED, 1000);
+                            mLeds[0]->setFlash(LED_FAST_FLASH, LED_RED);
                         }
                         else
                         {
-                            mLeds[0]->flash(BILED2_FLASH_GREEN, 1000);
+                            mLeds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
                         }
                     }
                     break;
@@ -154,9 +197,6 @@ void RoleSlave::run()
             default:
                 break;
         }
-//        PrintInfo("Slave data in: ");
-//        for (uint8_t idx = 0; idx < 4; idx++)
-//            printf("%02X ", rxData[idx]);
-//        printf("\n");
+
     }
 }

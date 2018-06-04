@@ -26,6 +26,7 @@ public:
 
     void init(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount);
     void buttonCB(uint8_t type);
+    void debug(uint8_t argc, char **argv);
     void run();
 };
 
