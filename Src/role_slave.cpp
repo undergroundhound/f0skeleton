@@ -11,7 +11,7 @@
 
 #define FIRE_TIME_ON    1000 //1000ms
 
-RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount)
+RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount), leds(led)
 {
     mArmed = false;
 
@@ -109,8 +109,38 @@ void RoleSlave::debug(uint8_t argc, char **argv)
         }
 }
 
+HAL_StatusTypeDef RoleSlave::checkMaster()
+{
+    static uint32_t lastTick = 0;
+
+    if(HAL_GetTick() > lastTick)
+    {
+        lastTick = HAL_GetTick() + 2000;
+        uint8_t buf[4];
+        memset(buf, 0x00, 4);
+        return mNodeInterface->sendToMaster(buf);
+    }
+
+    return HAL_BUSY;
+}
+
 void RoleSlave::run()
 {
+    static bool masterFound = false;
+
+    HAL_StatusTypeDef status = checkMaster();
+
+    if(status == HAL_OK && !masterFound)
+    {
+        leds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
+        masterFound = true;
+    }
+    else if((status == HAL_ERROR || status == HAL_TIMEOUT) && masterFound)
+    {
+        leds[0]->setFlash(LED_HEARTBEAT, LED_RED);
+        masterFound = false;
+    }
+
     //reset output after a second
     for(uint8_t idx=0; idx < 4; idx++)
     {

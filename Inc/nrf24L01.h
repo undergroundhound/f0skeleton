@@ -55,6 +55,7 @@ public:
 	uint8_t isSending();
 
 	void flushRx();
+	void flushTx();
 	void powerUpRx();
 	void powerUpTx();
 	void powerDown();

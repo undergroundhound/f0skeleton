@@ -28,6 +28,7 @@ void BiLED2::setFlash(sLEDflash_t seqeunce, uint8_t colour)
 
     mCurrSequence = seqeunce;
     mLedColour = colour;
+    mTickCount = 0;
 }
 
 void BiLED2::run()

@@ -16,6 +16,8 @@
 
 class RoleSlave : public Role
 {
+    BiLED2 **leds;
+
     uint8_t rxData[4];
     uint8_t mArmed;
 
@@ -34,6 +36,8 @@ class RoleSlave : public Role
 //    LED ledR = LED(GPIOA, GPIO_PIN_1);
 //    LED ledG = LED(GPIOA, GPIO_PIN_0);
 //    BiLED led1 = BiLED(&ledR, &ledG);
+
+    HAL_StatusTypeDef checkMaster();
 
 public:
     RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount);

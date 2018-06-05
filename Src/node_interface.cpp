@@ -121,7 +121,7 @@ HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t nodeId, uint8_t *data)
 
     HAL_Delay(5);
 
-    HAL_StatusTypeDef status = send(data, 4, 10);
+    HAL_StatusTypeDef status = send(data, 4, 50);
 
     mNRF->powerUpRx();
 
@@ -217,6 +217,7 @@ HAL_StatusTypeDef NodeInterface::send(uint8_t *data, uint8_t len, uint32_t timeo
     mState = NODE_STATE_SEND;
 
     mCurrObj->busy = true;
+    mCurrObj->status = HAL_ERROR;
     while(mCurrObj->busy && timeout--)
     {
         runTx();

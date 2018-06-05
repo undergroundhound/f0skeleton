@@ -21,6 +21,7 @@ RoleMaster::RoleMaster(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCo
     mRxAvailable = false;
 
     uint8_t status = 0;
+
     mNodeInterface->pingNodes(1, MAX_NODES, &status);
 
     uint8_t nodes[MAX_NODES];
@@ -181,7 +182,6 @@ void RoleMaster::checkSlaves()
         static uint8_t status = 0;
         uint8_t newStatus = 0;
         mNodeInterface->pingNodes(1, MAX_NODES, &newStatus);
-        printf("node state: %02X : %02X\n", status, newStatus);
         if(status != newStatus)
         {
             mLeds[1]->setFlash(LED_FAST_FLASH, LED_RED);
@@ -197,7 +197,7 @@ void RoleMaster::checkSlaves()
 
 void RoleMaster::run()
 {
-//    checkSlaves();
+    checkSlaves();
     if(mNodeInterface->runRx(rxData))
     {
         PrintInfo("Master data in: ");

@@ -83,6 +83,9 @@ HAL_StatusTypeDef NRF24L01::init(cSPI *spi, cOutput *csn, cOutput *ce) //: mSPI(
         return HAL_ERROR;
 
     mInitialized = true;
+    flushRx();
+    flushTx();
+
     return HAL_OK;
 }
 
@@ -222,16 +225,7 @@ void NRF24L01::send(uint8_t *value)
     powerUpTx();
 
     /* Do we really need to flush TX fifo each time ? */
-#if 1
-    /* Pull down chip select */
-    mCSN->reset();
-
-    /* Write cmd to flush transmit FIFO */
-    mSPI->writeOpCode(FLUSH_TX);
-
-    /* Pull up chip select */
-    mCSN->set();
-#endif
+    flushTx();
 
     /* Pull down chip select */
     mCSN->reset();
@@ -315,6 +309,13 @@ void NRF24L01::flushRx()
 {
     mCSN->reset();
     mSPI->writeOpCode(FLUSH_RX);
+    mCSN->set();
+}
+
+void NRF24L01::flushTx()
+{
+    mCSN->reset();
+    mSPI->writeOpCode(FLUSH_TX);
     mCSN->set();
 }
 

@@ -211,8 +211,6 @@ int main(void)
     BiLED2 led4(&led4green, &led4red);
     BiLED2 led5(&led5green, &led5red);
 
-
-    led1.setFlash(LED_HEARTBEAT, LED_GREEN);
     BiLED2 *leds[5];
     leds[0] = &led1;
     leds[1] = &led2;
