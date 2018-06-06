@@ -31,7 +31,22 @@ RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCoun
     outputs[3] = &out4;
     timeOuts[3] = 0;
 
-//    led1.setFlash(LED_RED, LED_FAST_FLASH);
+    mAdc.init();
+
+    mLeds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
+}
+
+void RoleSlave::checkConnections()
+{
+    uint8_t channels[4] = { 0x01, 0x04, 0x05, 0x07};
+
+    for(uint8_t idx = 0; idx < 4; idx++)
+    {
+        if( mAdc.sampleChannel(channels[idx]) < OUTPUT_OPEN_ADC )
+            mLeds[idx+1]->setFlash(LED_FAST_FLASH, LED_RED);
+        else
+            mLeds[idx+1]->setFlash(LED_ON, LED_GREEN);
+    }
 }
 
 void RoleSlave::arm(uint8_t state)
@@ -77,7 +92,7 @@ void RoleSlave::debug(uint8_t argc, char **argv)
     if(argc == 1)
         {
             printf(GREEN_B("Slave Device\n"));
-            printf("p\t- ping master\n");
+            printf("a\t- adc\n");
             return;
         }
 
@@ -101,6 +116,17 @@ void RoleSlave::debug(uint8_t argc, char **argv)
                             printf(RED("FAIL\n"));
                     }
                     break;
+
+                    case 'a':
+                    {
+                        uint8_t channels[4] = { 0x01, 0x04, 0x05, 0x07};
+                        printf(CYAN_B("slave adc\n"));
+                        for(uint8_t idx = 0; idx < 4; idx++)
+                        {
+                            printf("c [%d]: %d\n", channels[idx], (int)mAdc.sampleChannel(channels[idx]));
+                        }
+                    }
+                    break;
                     default:
                         break;
                 }
@@ -115,6 +141,8 @@ HAL_StatusTypeDef RoleSlave::checkMaster()
 
     if(HAL_GetTick() > lastTick)
     {
+        printf("cm\n");
+        checkConnections();
         lastTick = HAL_GetTick() + 2000;
         uint8_t buf[4];
         memset(buf, 0x00, 4);
@@ -126,19 +154,23 @@ HAL_StatusTypeDef RoleSlave::checkMaster()
 
 void RoleSlave::run()
 {
-    static bool masterFound = false;
-
-    HAL_StatusTypeDef status = checkMaster();
-
-    if(status == HAL_OK && !masterFound)
+    if(!mArmed)
     {
-        leds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
-        masterFound = true;
-    }
-    else if((status == HAL_ERROR || status == HAL_TIMEOUT) && masterFound)
-    {
-        leds[0]->setFlash(LED_HEARTBEAT, LED_RED);
-        masterFound = false;
+        HAL_StatusTypeDef status = checkMaster();
+        if(status != HAL_BUSY)
+        {
+
+            if(status == HAL_OK)
+            {
+                printf("masterok\n");
+                leds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
+            }
+            else
+            {
+                printf("master!ok\n");
+                leds[0]->setFlash(LED_HEARTBEAT, LED_RED);
+            }
+        }
     }
 
     //reset output after a second
@@ -166,7 +198,6 @@ void RoleSlave::run()
         {
             case PMSG_TYPE_UNKNOWN:
             {
-                printf("eks hier\n");
 //                if(pmsg.tag == 0 && pmsg.data[0] == 0 && pmsg.data[1] == 0)
 //                {
                     mNodeInterface->sendToMaster((uint8_t *) &pmsg);
@@ -201,36 +232,33 @@ void RoleSlave::run()
                             printf("output[%d] set\n", fireCount);
                             outputs[fireCount]->set();
                             timeOuts[fireCount] = HAL_GetTick() + FIRE_TIME_ON;
+                            leds[fireCount+1]->setFlash(LED_ON, LED_RED);
                         }
                     }
                     break;
-                    case PMSG_TAG_WRITE_REG:
-                        printf("write_reg: %d = %d\n", pmsg.data[0], pmsg.data[1]);
-                        slaveRegisters.setRegister(pmsg.data[0], pmsg.data[1]);
-                        break;
                     default:
                         break;
                 }
             }break;
             case PMSG_TYPE_GET:
             {
-                switch (pmsg.tag) {
-                    case PMSG_TAG_READ_REG:
-                    {
-                        uint8_t reg = pmsg.data[0];
-                        uint8_t value = 0;
-
-                        slaveRegisters.getRegister(reg, &value);
-                        printf("read_reg: %d = %d\n", pmsg.data[0], value);
-//                        printf("read_reg: %d\n", reg);
-                        pmsg.type = PMSG_TYPE_SET;
-                        pmsg.data[1] = value;
-                        mNodeInterface->sendToMaster((uint8_t *) &pmsg);
-                    }
-                    break;
-                    default:
-                        break;
-                }
+//                switch (pmsg.tag) {
+//                    case PMSG_TAG_READ_REG:
+//                    {
+//                        uint8_t reg = pmsg.data[0];
+//                        uint8_t value = 0;
+//
+//                        slaveRegisters.getRegister(reg, &value);
+//                        printf("read_reg: %d = %d\n", pmsg.data[0], value);
+////                        printf("read_reg: %d\n", reg);
+//                        pmsg.type = PMSG_TYPE_SET;
+//                        pmsg.data[1] = value;
+//                        mNodeInterface->sendToMaster((uint8_t *) &pmsg);
+//                    }
+//                    break;
+//                    default:
+//                        break;
+//                }
             }
                 break;
             default:

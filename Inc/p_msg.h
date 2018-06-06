@@ -20,9 +20,7 @@ typedef enum{
     PMSG_TAG_UNKNOWN,
     PMSG_TAG_STATUS,
     PMSG_TAG_ARM,
-    PMSG_TAG_FIRE,
-    PMSG_TAG_READ_REG,
-    PMSG_TAG_WRITE_REG
+    PMSG_TAG_FIRE
 }ePmsgTag_t;
 
 typedef struct{

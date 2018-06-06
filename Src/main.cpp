@@ -42,30 +42,29 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../Inc/node_interface.h"
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_conf.h"
-
 #include "hw.h"
-#include "terminal.h"
-#include "output.h"
+#include "hw_gpio.h"
+#include "bi_led_2.h"
+
+#include "i2c.h"
+#include "nvm.h"
+
 #include "spi.h"
 #include "nrf24L01.h"
-#include "nvm.h"
-#include "hw_gpio.h"
-//#include "led.h"
-#include "button.h"
-#include "p_msg.h"
-//#include "bi_led.h"
+#include "node_interface.h"
 #include "device_controller.h"
-#include "adc.h"
-#include "i2c.h"
-#include "bi_led_2.h"
+
+#include "output.h"
+#include "button.h"
+#include "terminal.h"
 
 /* Private variables ---------------------------------------------------------*/
 
-#define PrintInfo(_info) printf("%15s : ", _info)
+#define VERSION         0x000001
 
+#define PrintInfo(_info) printf("%15s : ", _info)
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -82,7 +81,6 @@ Button *buttonLaunch;
 
 DeviceController deviceController = DeviceController();
 
-cADC *adc;
 
 /*!
  * Debug entries
@@ -130,6 +128,7 @@ void buttonPress(uint8_t state)
     deviceController.buttonCB(state);
 }
 
+
 int main(void)
 {
     /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -142,7 +141,13 @@ int main(void)
     HW_GPIO_ClockEnable();
 
     terminal_init();
-    printf("welcome!\n");
+    printf("Wi-Py welcomes you!\n");
+    PrintInfo("Version");
+    printf("%02d.%02d.%02d\n", ((VERSION >> 16) & 0xFF), ((VERSION >> 8) & 0xFF), (VERSION & 0xFF));
+
+    I2C iic = I2C();
+    iic.init();
+    mNVM = new NVM(&iic);
 
     PrintInfo("SPI1");
     if (spi.init(SPI1, 4000000) == HAL_OK)
@@ -152,14 +157,6 @@ int main(void)
 
     csn = new cOutput(GPIOB, GPIO_PIN_12);
     ce = new cOutput(GPIOB, GPIO_PIN_2);
-
-    I2C iic = I2C();
-    iic.init();
-    mNVM = new NVM(&iic);
-
-    buttonLaunch = new Button(GPIOB, GPIO_PIN_7);
-    buttonLaunch->setCb(buttonPress);
-    HW_SetupIrq(GPIOB, GPIO_PIN_7, GPIO_MODE_IT_RISING_FALLING, GPIO_PULLUP, buttonIrq);
 
     PrintInfo("nRF");
     if(nrf.init(&spi, csn, ce) == HAL_OK)
@@ -171,6 +168,10 @@ int main(void)
         printf(RED("Fail\n"));
 
     nodeInterface = new NodeInterface(&nrf);
+
+    buttonLaunch = new Button(GPIOB, GPIO_PIN_7);
+    buttonLaunch->setCb(buttonPress);
+    HW_SetupIrq(GPIOB, GPIO_PIN_7, GPIO_MODE_IT_RISING_FALLING, GPIO_PULLUP, buttonIrq);
 
     {
         sNvm_t nvm;
@@ -205,26 +206,38 @@ int main(void)
     cOutput led5green(GPIOB, GPIO_PIN_5);
     cOutput led5red(GPIOB, GPIO_PIN_6);
 
-    BiLED2 led1(&led1green, &led1red);
-    BiLED2 led2(&led2green, &led2red);
-    BiLED2 led3(&led3green, &led3red);
-    BiLED2 led4(&led4green, &led4red);
-    BiLED2 led5(&led5green, &led5red);
+//    BiLED2 led1(&led1green, &led1red);
+//    BiLED2 led2(&led2green, &led2red);
+//    BiLED2 led3(&led3green, &led3red);
+//    BiLED2 led4(&led4green, &led4red);
+//    BiLED2 led5(&led5green, &led5red);
+//
+//    BiLED2 *leds[5];
+//    leds[0] = &led1;
+//    leds[1] = &led2;
+//    leds[2] = &led3;
+//    leds[3] = &led4;
+//    leds[4] = &led5;
+
 
     BiLED2 *leds[5];
-    leds[0] = &led1;
-    leds[1] = &led2;
-    leds[2] = &led3;
-    leds[3] = &led4;
-    leds[4] = &led5;
+    leds[0] = new BiLED2(&led1green, &led1red);
+    leds[1] = new BiLED2(&led2green, &led2red);
+    leds[2] = new BiLED2(&led3green, &led3red);
+    leds[3] = new BiLED2(&led4green, &led4red);
+    leds[4] = new BiLED2(&led5green, &led5red);
+
+
+    leds[0]->setFlash(LED_OFF, LED_RED);
+    leds[1]->setFlash(LED_OFF, LED_RED);
+    leds[2]->setFlash(LED_OFF, LED_RED);
+    leds[3]->setFlash(LED_OFF, LED_RED);
+    leds[4]->setFlash(LED_OFF, LED_RED);
+
 
     deviceController.init(nodeInterface, leds, 5);
 
-//    adc = new cADC();
-//    adc->init();
-//    nrf.powerUpRx();
-//    printf("adc [0]: %d\n", adc->sampleChannel(4));
-
+    nrf.powerUpRx();
 
     while (1)
     {
@@ -265,7 +278,7 @@ void Id(uint8_t argc, char **argv)
     }
     nvm.id = (uint8_t)id;
     mNVM->set(&nvm);
-    printId();
+    printf("set id %d\n", id);
 }
 sTermEntry_t idEntry =
 { "id", "Set device id", Id };
@@ -297,7 +310,8 @@ void netId(uint8_t argc, char **argv)
 
     nvm.netId = (uint8_t)id;
     mNVM->set(&nvm);
-    printId();
+    HAL_Delay(5);
+    printf("set netid %d\n", id);
 }
 sTermEntry_t netIdEntry =
 { "nid", "Set Network id", netId };
@@ -361,11 +375,12 @@ sTermEntry_t nrfEntry =
  */
 void _Error_Handler(const char * file, int line)
 {
+    printf("error %s @ %d", file, line);
     /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
-    while (1)
-    {
-    }
+//    while (1)
+//    {
+//    }
     /* USER CODE END Error_Handler_Debug */
 }
 

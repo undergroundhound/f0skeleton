@@ -18,10 +18,11 @@ typedef struct{
     uint8_t flashByte;
 } sLEDflash_t;
 
-const sLEDflash_t LED_OFF        = {0xFFFF, 0b00000000};
+const sLEDflash_t LED_ON         = {0xFFFF,  0xFF};
+const sLEDflash_t LED_OFF        = {0xFFFF, 0x00};
 const sLEDflash_t LED_HEARTBEAT  = {125,    0b10100000};
-const sLEDflash_t LED_FAST_FLASH = {1000,     0b10101010};
-const sLEDflash_t LED_SLOW_FLASH = {250,    0b11001100};
+const sLEDflash_t LED_FAST_FLASH = {100,    0b10101010};
+const sLEDflash_t LED_SLOW_FLASH = {750,    0b11001100};
 
 class BiLED2
 {

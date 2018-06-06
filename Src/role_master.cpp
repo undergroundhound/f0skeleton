@@ -9,7 +9,6 @@
 
 #include "role_master.h"
 #include "p_msg.h"
-#include "pyro_registers.h"
 
 RoleMaster::RoleMaster(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount)
 {
@@ -22,7 +21,7 @@ RoleMaster::RoleMaster(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCo
 
     uint8_t status = 0;
 
-    mNodeInterface->pingNodes(1, MAX_NODES, &status);
+    printf("pingNodes: %d\n",mNodeInterface->pingNodes(1, MAX_NODES, &status));
 
     uint8_t nodes[MAX_NODES];
     uint8_t nodeCount = mNodeInterface->getNodes(nodes);
@@ -57,38 +56,27 @@ void RoleMaster::armSlaves(uint8_t armed)
     mNodeInterface->sendToNodes(mData);
 }
 
-void RoleMaster::getRegister(uint8_t slave, uint8_t reg, uint8_t *value)
-{
-    sPmsg_t pmsg;
-    pmsg.type = PMSG_TYPE_GET;
-    pmsg.tag = PMSG_TAG_READ_REG;
-    pmsg.data[0] = reg;
-    pmsg.data[1] = 0;
-
-    mNodeInterface->sendToNode(slave, (uint8_t *)&pmsg);
-
-    int timeout = 1000;
-    while(!mNodeInterface->runRx((uint8_t *)&pmsg) && timeout--)
-    {
-        HAL_Delay(5);
-    }
-
-    if(!timeout)
-        return;
-
-    *value = pmsg.data[1];
-}
-
-void RoleMaster::setRegister(uint8_t slave, uint8_t reg, uint8_t value)
-{
-    sPmsg_t pmsg;
-    pmsg.type = PMSG_TYPE_SET;
-    pmsg.tag = PMSG_TAG_WRITE_REG;
-    pmsg.data[0] = reg;
-    pmsg.data[1] = value;
-
-    mNodeInterface->sendToNode(slave, (uint8_t *)&pmsg);
-}
+//void RoleMaster::getRegister(uint8_t slave, uint8_t reg, uint8_t *value)
+//{
+//    sPmsg_t pmsg;
+//    pmsg.type = PMSG_TYPE_GET;
+//    pmsg.tag = PMSG_TAG_READ_REG;
+//    pmsg.data[0] = reg;
+//    pmsg.data[1] = 0;
+//
+//    mNodeInterface->sendToNode(slave, (uint8_t *)&pmsg);
+//
+//    int timeout = 1000;
+//    while(!mNodeInterface->runRx((uint8_t *)&pmsg) && timeout--)
+//    {
+//        HAL_Delay(5);
+//    }
+//
+//    if(!timeout)
+//        return;
+//
+//    *value = pmsg.data[1];
+//}
 
 void RoleMaster::buttonCallback(uint8_t state)
 {
@@ -125,21 +113,6 @@ void RoleMaster::debug(uint8_t argc, char **argv)
             char c = argv[1][0];
             switch(c)
             {
-                case 'r':
-                {
-                    uint8_t regVal = atoi(argv[2]);
-                    getRegister(1, P_REG_ADC1, &regVal);
-                    printf("1: %d\n", regVal);
-
-                    regVal = 50;
-                    setRegister(1, P_REG_ADC1, regVal);
-                    printf("2: %d\n", regVal);
-
-                    regVal = 0;
-                    getRegister(1, P_REG_ADC1, &regVal);
-                    printf("3: %d\n", regVal);
-                }
-                break;
                 case 'p':
                 {
                     uint8_t status = 0;
@@ -184,20 +157,26 @@ void RoleMaster::checkSlaves()
         mNodeInterface->pingNodes(1, MAX_NODES, &newStatus);
         if(status != newStatus)
         {
-            mLeds[1]->setFlash(LED_FAST_FLASH, LED_RED);
-            mLeds[2]->setFlash(LED_FAST_FLASH, LED_RED);
             status = newStatus;
             if(status & 0x01)
-                mLeds[1]->setFlash(LED_HEARTBEAT, LED_GREEN);
+                mLeds[1]->setFlash(LED_ON, LED_GREEN);
+            else
+                mLeds[1]->setFlash(LED_FAST_FLASH, LED_RED);
+
             if(status & 0x02)
-                mLeds[2]->setFlash(LED_HEARTBEAT, LED_GREEN);
+                mLeds[2]->setFlash(LED_ON, LED_GREEN);
+            else
+                mLeds[2]->setFlash(LED_FAST_FLASH, LED_RED);
         }
     }
 }
 
 void RoleMaster::run()
 {
-    checkSlaves();
+    if(!mArmed)
+        checkSlaves();
+
+
     if(mNodeInterface->runRx(rxData))
     {
         PrintInfo("Master data in: ");
@@ -205,6 +184,7 @@ void RoleMaster::run()
             printf("%02X ", rxData[idx]);
         printf("\n");
     }
+
     if(longPress)
     {
         longPress = 0;

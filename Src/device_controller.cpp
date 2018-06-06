@@ -45,6 +45,9 @@ void DeviceController::buttonCB(uint8_t state)
 
 void DeviceController::debug(uint8_t argc, char **argv)
 {
+    if(!mRole)
+        return;
+
     mRole->debug(argc, argv);
 }
 

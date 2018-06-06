@@ -22,17 +22,25 @@ void cADC::init()
     if(mInitialized)
         return;
 
-    ADC_ChannelConfTypeDef sConfig;
-
     __HAL_RCC_ADC1_CLK_ENABLE();
-      /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
-      */
+
+
+    printf("kom hier\n");
+    GPIO_InitTypeDef GPIO_InitStruct;
+
+    GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_3 | GPIO_PIN_5 | GPIO_PIN_7;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+     */
     hadc.Instance = ADC1;
-    hadc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
-    hadc.Init.Resolution = ADC_RESOLUTION_8B;
+    hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+    hadc.Init.Resolution = ADC_RESOLUTION_12B;
     hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
     hadc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
-    hadc.Init.EOCSelection = DISABLE;
+    hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
     hadc.Init.LowPowerAutoWait = DISABLE;
     hadc.Init.LowPowerAutoPowerOff = DISABLE;
     hadc.Init.ContinuousConvMode = DISABLE;
@@ -41,23 +49,10 @@ void cADC::init()
     hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
     hadc.Init.DMAContinuousRequests = DISABLE;
     hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-    HAL_StatusTypeDef status = HAL_ADC_Init(&hadc);
-    if (status != HAL_OK)
+    if (HAL_ADC_Init(&hadc) != HAL_OK)
     {
-        //TODO
-//        printf("status: %d\n", status);
-//      _Error_Handler(__FILE__, __LINE__);
-    }
-
-      /**Configure for the selected ADC regular channel to be converted.
-      */
-    sConfig.Channel = ADC_CHANNEL_4;
-    sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
-    sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-    if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-    {
-        printf("2\n");
-//      _Error_Handler(__FILE__, __LINE__);
+        printf("fokkop\n");
+        //    _Error_Handler(__FILE__, __LINE__);
     }
 
     mInitialized = true;
@@ -75,9 +70,6 @@ uint16_t cADC::sampleChannel(uint32_t channel)
 
     if(mInitialized)
     {
-        //enable the adc clock
-//        __HAL_RCC_ADC1_CLK_ENABLE();
-
         //calibrate the adc
         HAL_ADCEx_Calibration_Start(&hadc);
 
@@ -88,6 +80,7 @@ uint16_t cADC::sampleChannel(uint32_t channel)
 
         //configure selected channel
         sConfig.Channel = channel;
+        sConfig.SamplingTime = ADC_SAMPLETIME_71CYCLES_5;
         sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
         HAL_ADC_ConfigChannel(&hadc, &sConfig);
 
@@ -99,10 +92,7 @@ uint16_t cADC::sampleChannel(uint32_t channel)
         //get the converted value of channel
         result = HAL_ADC_GetValue(&hadc);
 
-//        __HAL_ADC_DISABLE(&hadc);
-
-        //disable the adc clock
-//        __HAL_RCC_ADC1_CLK_DISABLE();
+        HAL_ADC_Stop(&hadc);
     }
 
     return result;

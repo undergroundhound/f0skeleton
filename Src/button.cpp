@@ -7,11 +7,9 @@
 
 #include "button.h"
 
-Button::Button(GPIO_TypeDef *gpio, uint32_t pin)
+Button::Button(GPIO_TypeDef *gpio, uint32_t pin) : mGpio(gpio), mPin(pin)
 {
     mState = false;
-    mGpio = gpio;
-    mPin = pin;
     mCallback = 0;
     mDebounce = 0;
 }

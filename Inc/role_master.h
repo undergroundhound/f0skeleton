@@ -24,9 +24,7 @@ class RoleMaster : public Role
     void checkSlaves();
     void armSlaves(uint8_t armed);
 
-    void getRegister(uint8_t slave, uint8_t reg, uint8_t *value);
-    void setRegister(uint8_t slave, uint8_t reg, uint8_t value);
-
+//    void getRegister(uint8_t slave, uint8_t reg, uint8_t *value);
 
 public:
     RoleMaster(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount);
