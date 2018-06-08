@@ -22,8 +22,8 @@ BiLED2::BiLED2(cOutput *green, cOutput *red) : mGreen(green), mRed(red)
 
 void BiLED2::setFlash(sLEDflash_t seqeunce, uint8_t colour)
 {
-//    if((mCurrSequence.delay == seqeunce.delay) && (mCurrSequence.flashByte == seqeunce.flashByte))
-//        return;
+    if((mCurrSequence.delay == seqeunce.delay) && (mCurrSequence.flashByte == seqeunce.flashByte) && (colour == mLedColour))
+        return;
 
     off();
     if(colour > 1)
@@ -44,7 +44,7 @@ void BiLED2::run()
 
     if(mCurrSequence.delay == 0xFFFF)
     {
-        if(mCurrSequence.flashByte == 0x00)
+        if(mCurrSequence.flashByte == 0x00 && !out->get())
             out->reset();
         else
             out->set();

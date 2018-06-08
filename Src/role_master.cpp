@@ -34,6 +34,7 @@ RoleMaster::RoleMaster(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCo
     }
 
     nodeInterface->listen();
+    led[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
 }
 
 void RoleMaster::armSlaves(uint8_t armed)
@@ -56,27 +57,31 @@ void RoleMaster::armSlaves(uint8_t armed)
     mNodeInterface->sendToNodes(mData);
 }
 
-//void RoleMaster::getRegister(uint8_t slave, uint8_t reg, uint8_t *value)
-//{
-//    sPmsg_t pmsg;
-//    pmsg.type = PMSG_TYPE_GET;
-//    pmsg.tag = PMSG_TAG_READ_REG;
-//    pmsg.data[0] = reg;
-//    pmsg.data[1] = 0;
-//
-//    mNodeInterface->sendToNode(slave, (uint8_t *)&pmsg);
-//
-//    int timeout = 1000;
-//    while(!mNodeInterface->runRx((uint8_t *)&pmsg) && timeout--)
-//    {
-//        HAL_Delay(5);
-//    }
-//
-//    if(!timeout)
-//        return;
-//
-//    *value = pmsg.data[1];
-//}
+HAL_StatusTypeDef RoleMaster::getStatus(uint8_t slave, uint8_t *value)
+{
+    sPmsg_t pmsg;
+    pmsg.type = PMSG_TYPE_GET;
+    pmsg.tag = PMSG_TAG_STATUS;
+    pmsg.data[0] = 0;
+    pmsg.data[1] = 0;
+
+    HAL_StatusTypeDef status = mNodeInterface->sendToNode(slave, (uint8_t *)&pmsg);
+    if(status != HAL_OK)
+        return status;
+
+    int timeout = 20;
+    while(!mNodeInterface->runRx((uint8_t *)&pmsg) && timeout--)
+    {
+        HAL_Delay(5);
+    }
+
+    if(!timeout)
+        return HAL_TIMEOUT;
+
+    *value = pmsg.data[1];
+
+    return HAL_OK;
+}
 
 void RoleMaster::buttonCallback(uint8_t state)
 {
@@ -131,11 +136,19 @@ void RoleMaster::debug(uint8_t argc, char **argv)
                 break;
                 case 's':
                 {
-                    PrintInfo("Send to node");
-                    printf("1\n");
-                    uint8_t data[4] = {0x00, 0x01, 0x02, 0x03};
-
-                    mNodeInterface->sendToNode(1, data);
+                    uint8_t nodes[MAX_NODES];
+                    uint8_t nodeCount = mNodeInterface->getNodes(nodes);
+                    PrintInfo("# of Nodes");
+                    printf("%02d\n", nodeCount);
+                    for(uint8_t idx = 0; idx < nodeCount; idx++)
+                    {
+                        PrintInfo("Node Status");
+                        uint8_t status = 0;
+                        if(getStatus(nodes[idx], &status) == HAL_OK)
+                            printf("%d = 0x%02X\n", nodes[idx], status);
+                        else
+                            printf(RED("timeout\n"));
+                    }
                 }
                 break;
 
@@ -151,22 +164,21 @@ void RoleMaster::checkSlaves()
 {
     if(HAL_GetTick() > nextPoll)
     {
-        nextPoll = HAL_GetTick() + 5000;
-        static uint8_t status = 0;
-        uint8_t newStatus = 0;
-        mNodeInterface->pingNodes(1, MAX_NODES, &newStatus);
-        if(status != newStatus)
+        nextPoll = HAL_GetTick() + 1000;
+        for(uint8_t idx = 1; idx < (MAX_NODES+1); idx++)
         {
-            status = newStatus;
-            if(status & 0x01)
-                mLeds[1]->setFlash(LED_ON, LED_GREEN);
-            else
-                mLeds[1]->setFlash(LED_FAST_FLASH, LED_RED);
+            uint8_t status = 0;
 
-            if(status & 0x02)
-                mLeds[2]->setFlash(LED_ON, LED_GREEN);
-            else
-                mLeds[2]->setFlash(LED_FAST_FLASH, LED_RED);
+            if(getStatus(idx, &status) == HAL_OK)
+            {
+                if(status == 0)
+                    mLeds[idx]->setFlash(LED_ON, LED_GREEN);
+                else
+                    mLeds[idx]->setFlash(LED_FAST_FLASH, LED_GREEN);
+            }else
+            {
+                mLeds[idx]->setFlash(LED_FAST_FLASH, LED_RED);
+            }
         }
     }
 }
@@ -175,7 +187,6 @@ void RoleMaster::run()
 {
     if(!mArmed)
         checkSlaves();
-
 
     if(mNodeInterface->runRx(rxData))
     {

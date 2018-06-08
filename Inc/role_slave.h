@@ -20,6 +20,10 @@ class RoleSlave : public Role
 
     uint8_t rxData[4];
     uint8_t mArmed;
+    uint8_t mStatus;
+    uint32_t mLastTick;
+    uint32_t mConnectionTimeout;
+    bool mConnected;
 
     void arm(uint8_t state);
 
@@ -32,7 +36,6 @@ class RoleSlave : public Role
     cOutput out4 = cOutput(GPIOA, GPIO_PIN_2);
     cADC mAdc;
 
-    HAL_StatusTypeDef checkMaster();
     void checkConnections();
 public:
     RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount);

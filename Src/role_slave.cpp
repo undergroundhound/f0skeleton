@@ -10,10 +10,15 @@
 #include "p_msg.h"
 
 #define FIRE_TIME_ON    1000 //1000ms
+#define CON_CHECK_INT   1000
+#define CON_TIMEOUT     2500
 
 RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount), leds(led)
 {
     mArmed = false;
+    mStatus = 0;
+    mLastTick = 0;
+    mConnectionTimeout = 0;
 
     out1.reset();
     outputs[0] = &out1;
@@ -33,7 +38,7 @@ RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCoun
 
     mAdc.init();
 
-    mLeds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
+    mLeds[0]->setFlash(LED_ON, LED_RED);
 }
 
 void RoleSlave::checkConnections()
@@ -43,9 +48,15 @@ void RoleSlave::checkConnections()
     for(uint8_t idx = 0; idx < 4; idx++)
     {
         if( mAdc.sampleChannel(channels[idx]) < OUTPUT_OPEN_ADC )
+        {
             mLeds[idx+1]->setFlash(LED_FAST_FLASH, LED_RED);
+            mStatus |= (1 << idx);
+        }
         else
+        {
             mLeds[idx+1]->setFlash(LED_ON, LED_GREEN);
+            mStatus &= ~(1 << idx);
+        }
     }
 }
 
@@ -135,42 +146,25 @@ void RoleSlave::debug(uint8_t argc, char **argv)
         }
 }
 
-HAL_StatusTypeDef RoleSlave::checkMaster()
-{
-    static uint32_t lastTick = 0;
-
-    if(HAL_GetTick() > lastTick)
-    {
-        printf("cm\n");
-        checkConnections();
-        lastTick = HAL_GetTick() + 2000;
-        uint8_t buf[4];
-        memset(buf, 0x00, 4);
-        return mNodeInterface->sendToMaster(buf);
-    }
-
-    return HAL_BUSY;
-}
-
 void RoleSlave::run()
 {
     if(!mArmed)
     {
-        HAL_StatusTypeDef status = checkMaster();
-        if(status != HAL_BUSY)
+        if(HAL_GetTick() > mLastTick)
         {
-
-            if(status == HAL_OK)
-            {
-                printf("masterok\n");
-                leds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
-            }
-            else
-            {
-                printf("master!ok\n");
-                leds[0]->setFlash(LED_HEARTBEAT, LED_RED);
-            }
+            checkConnections();
+            mLastTick = HAL_GetTick() + CON_CHECK_INT;
         }
+    }
+
+    if(HAL_GetTick() > mConnectionTimeout)
+    {
+        //nie meer connected nie.
+        if(mArmed)
+            mArmed = false;
+
+        mConnected = false;
+        leds[0]->setFlash(LED_ON, LED_RED);
     }
 
     //reset output after a second
@@ -200,12 +194,13 @@ void RoleSlave::run()
             {
 //                if(pmsg.tag == 0 && pmsg.data[0] == 0 && pmsg.data[1] == 0)
 //                {
-                    mNodeInterface->sendToMaster((uint8_t *) &pmsg);
+//                    mNodeInterface->sendToMaster((uint8_t *) &pmsg);
 //                }
             }
                 break;
             case PMSG_TYPE_SET:
             {
+                mConnectionTimeout = HAL_GetTick() + CON_TIMEOUT;
                 switch(pmsg.tag)
                 {
                     case PMSG_TAG_ARM:
@@ -242,23 +237,21 @@ void RoleSlave::run()
             }break;
             case PMSG_TYPE_GET:
             {
-//                switch (pmsg.tag) {
-//                    case PMSG_TAG_READ_REG:
-//                    {
-//                        uint8_t reg = pmsg.data[0];
-//                        uint8_t value = 0;
-//
-//                        slaveRegisters.getRegister(reg, &value);
-//                        printf("read_reg: %d = %d\n", pmsg.data[0], value);
-////                        printf("read_reg: %d\n", reg);
-//                        pmsg.type = PMSG_TYPE_SET;
-//                        pmsg.data[1] = value;
-//                        mNodeInterface->sendToMaster((uint8_t *) &pmsg);
-//                    }
-//                    break;
-//                    default:
-//                        break;
-//                }
+                mConnectionTimeout = HAL_GetTick() + CON_TIMEOUT;
+                switch (pmsg.tag) {
+                    case PMSG_TAG_STATUS:
+                    {
+                        uint8_t value = mStatus;
+                        pmsg.type = PMSG_TYPE_SET;
+                        pmsg.data[1] = value;
+                        mNodeInterface->sendToMaster((uint8_t *) &pmsg);
+                        if(!mConnected)
+                            mLeds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
+                    }
+                    break;
+                    default:
+                        break;
+                }
             }
                 break;
             default:

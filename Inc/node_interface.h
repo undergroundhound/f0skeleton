@@ -5,7 +5,7 @@
 #include "nvm.h"
 #include "hw.h"
 
-#define MAX_NODES   8
+#define MAX_NODES   2
 
 typedef struct{
     bool busy = false;

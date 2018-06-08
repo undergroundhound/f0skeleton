@@ -206,20 +206,6 @@ int main(void)
     cOutput led5green(GPIOB, GPIO_PIN_5);
     cOutput led5red(GPIOB, GPIO_PIN_6);
 
-//    BiLED2 led1(&led1green, &led1red);
-//    BiLED2 led2(&led2green, &led2red);
-//    BiLED2 led3(&led3green, &led3red);
-//    BiLED2 led4(&led4green, &led4red);
-//    BiLED2 led5(&led5green, &led5red);
-//
-//    BiLED2 *leds[5];
-//    leds[0] = &led1;
-//    leds[1] = &led2;
-//    leds[2] = &led3;
-//    leds[3] = &led4;
-//    leds[4] = &led5;
-
-
     BiLED2 *leds[5];
     leds[0] = new BiLED2(&led1green, &led1red);
     leds[1] = new BiLED2(&led2green, &led2red);
@@ -261,19 +247,16 @@ void Id(uint8_t argc, char **argv)
     }
 
     if (argc != 2)
-    {
-        printf("id <id[1]>");
         return;
-    }
 
     sNvm_t nvm;
     mNVM->get(&nvm);
 
     int id = atoi(argv[1]);
 
-    if ((id < 0) || (id > 255))
+    if ((id < 0) || (id > MAX_NODES))
     {
-        printf("0 < id < 255\n");
+        printf("0 < id < %d\n", MAX_NODES);
         return;
     }
     nvm.id = (uint8_t)id;
