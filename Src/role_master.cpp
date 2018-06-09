@@ -10,7 +10,7 @@
 #include "role_master.h"
 #include "p_msg.h"
 
-RoleMaster::RoleMaster(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount)
+RoleMaster::RoleMaster(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount), leds(led)
 {
     nextPoll = 0;
     shortPress = 0;
@@ -19,22 +19,21 @@ RoleMaster::RoleMaster(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCo
     rocketCount = 0;
     mRxAvailable = false;
 
-    uint8_t status = 0;
+    mNodeCount = 0;
 
-    printf("pingNodes: %d\n",mNodeInterface->pingNodes(1, MAX_NODES, &status));
-
-    uint8_t nodes[MAX_NODES];
-    uint8_t nodeCount = mNodeInterface->getNodes(nodes);
-    PrintInfo("# of Nodes");
-    printf("%02d\n", nodeCount);
-    for(uint8_t idx = 0; idx < nodeCount; idx++)
-    {
-        PrintInfo("Node");
-        printf("%d\n", nodes[idx]);
-    }
-
+    checkSlaves(mArmed);
     nodeInterface->listen();
     led[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
+}
+
+
+void RoleMaster::sendToSlaves(uint8_t *data)
+{
+    for(uint8_t idx = 0; idx < mNodeCount; idx++)
+    {
+        printf("send to: %d\n", mNodes[idx]);
+        mNodeInterface->sendToNode(mNodes[idx], data);
+    }
 }
 
 void RoleMaster::armSlaves(uint8_t armed)
@@ -54,7 +53,7 @@ void RoleMaster::armSlaves(uint8_t armed)
         msg.data[1] = 0;
     }
     memcpy(mData, &msg, 4);
-    mNodeInterface->sendToNodes(mData);
+    sendToSlaves(mData);
 }
 
 HAL_StatusTypeDef RoleMaster::getStatus(uint8_t slave, uint8_t *value)
@@ -67,11 +66,12 @@ HAL_StatusTypeDef RoleMaster::getStatus(uint8_t slave, uint8_t *value)
 
     HAL_StatusTypeDef status = mNodeInterface->sendToNode(slave, (uint8_t *)&pmsg);
     if(status != HAL_OK)
-        return status;
+        return HAL_BUSY;
 
-    int timeout = 20;
+    int timeout = 10;
     while(!mNodeInterface->runRx((uint8_t *)&pmsg) && timeout--)
     {
+        leds[0]->run();
         HAL_Delay(5);
     }
 
@@ -99,14 +99,13 @@ void RoleMaster::buttonCallback(uint8_t state)
             break;
     }
 }
-#include <stdlib.h>
 
 void RoleMaster::debug(uint8_t argc, char **argv)
 {
     if(argc == 1)
     {
         printf(GREEN_B("Master Device\n"));
-        printf("p\t- ping nodes\n");
+        printf("s\t- nodes status\n");
         return;
     }
 
@@ -118,34 +117,16 @@ void RoleMaster::debug(uint8_t argc, char **argv)
             char c = argv[1][0];
             switch(c)
             {
-                case 'p':
-                {
-                    uint8_t status = 0;
-                    mNodeInterface->pingNodes(1, MAX_NODES, &status);
-
-                    uint8_t nodes[MAX_NODES];
-                    uint8_t nodeCount = mNodeInterface->getNodes(nodes);
-                    PrintInfo("# of Nodes");
-                    printf("%02d\n", nodeCount);
-                    for(uint8_t idx = 0; idx < nodeCount; idx++)
-                    {
-                        PrintInfo("Node");
-                        printf("%d\n", nodes[idx]);
-                    }
-                }
-                break;
                 case 's':
                 {
-                    uint8_t nodes[MAX_NODES];
-                    uint8_t nodeCount = mNodeInterface->getNodes(nodes);
                     PrintInfo("# of Nodes");
-                    printf("%02d\n", nodeCount);
-                    for(uint8_t idx = 0; idx < nodeCount; idx++)
+                    printf("%02d\n", mNodeCount);
+                    for(uint8_t idx = 0; idx < mNodeCount; idx++)
                     {
                         PrintInfo("Node Status");
                         uint8_t status = 0;
-                        if(getStatus(nodes[idx], &status) == HAL_OK)
-                            printf("%d = 0x%02X\n", nodes[idx], status);
+                        if(getStatus(mNodes[idx], &status) == HAL_OK)
+                            printf("%d = 0x%02X\n", mNodes[idx], status);
                         else
                             printf(RED("timeout\n"));
                     }
@@ -160,17 +141,31 @@ void RoleMaster::debug(uint8_t argc, char **argv)
     }
 }
 
-void RoleMaster::checkSlaves()
+void RoleMaster::checkSlaves(uint8_t armed)
 {
     if(HAL_GetTick() > nextPoll)
     {
         nextPoll = HAL_GetTick() + 1000;
-        for(uint8_t idx = 1; idx < (MAX_NODES+1); idx++)
+
+        //just ping devices
+        if(armed)
+        {
+            uint8_t data[4] = {0x00, 0x00, 0x00, 0x00};
+            sendToSlaves(data);
+
+            return;
+        }
+
+        mNodeCount = 0;
+        for(uint8_t idx = 1; idx <= MAX_NODES; idx++)
         {
             uint8_t status = 0;
 
-            if(getStatus(idx, &status) == HAL_OK)
+            HAL_Delay(1);
+            HAL_StatusTypeDef s = getStatus(idx, &status);
+            if(s == HAL_OK)
             {
+                mNodes[mNodeCount++] = idx;
                 if(status == 0)
                     mLeds[idx]->setFlash(LED_ON, LED_GREEN);
                 else
@@ -185,8 +180,7 @@ void RoleMaster::checkSlaves()
 
 void RoleMaster::run()
 {
-    if(!mArmed)
-        checkSlaves();
+    checkSlaves(mArmed);
 
     if(mNodeInterface->runRx(rxData))
     {
@@ -230,7 +224,7 @@ void RoleMaster::run()
             msg.data[0] = 0;
             msg.data[1] = rocketCount++;
             memcpy(mData, &msg, 4);
-            mNodeInterface->sendToNodes(mData);
+            sendToSlaves(mData);
         }
     }
 }

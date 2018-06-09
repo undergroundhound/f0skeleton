@@ -19,6 +19,7 @@ RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCoun
     mStatus = 0;
     mLastTick = 0;
     mConnectionTimeout = 0;
+    mConnected = false;
 
     out1.reset();
     outputs[0] = &out1;
@@ -119,7 +120,7 @@ void RoleSlave::debug(uint8_t argc, char **argv)
                     {
                         uint8_t buf[4];
                         memset(buf, 0x00, 4);
-                        HAL_StatusTypeDef status = mNodeInterface->sendToMaster(buf);
+                        HAL_StatusTypeDef status = mNodeInterface->sendToNode(0, buf);
                         PrintInfo("master");
                         if(status == HAL_OK)
                             printf(GREEN("OK\n"));
@@ -183,6 +184,7 @@ void RoleSlave::run()
         sPmsg_t pmsg;
         memcpy(&pmsg, rxData, 4);
 
+//        HAL_Delay(5);
         PrintInfo("Slave data in: ");
         for (uint8_t idx = 0; idx < 4; idx++)
             printf("%02X ", rxData[idx]);
@@ -192,6 +194,7 @@ void RoleSlave::run()
         {
             case PMSG_TYPE_UNKNOWN:
             {
+                mConnectionTimeout = HAL_GetTick() + CON_TIMEOUT;
 //                if(pmsg.tag == 0 && pmsg.data[0] == 0 && pmsg.data[1] == 0)
 //                {
 //                    mNodeInterface->sendToMaster((uint8_t *) &pmsg);
@@ -244,7 +247,7 @@ void RoleSlave::run()
                         uint8_t value = mStatus;
                         pmsg.type = PMSG_TYPE_SET;
                         pmsg.data[1] = value;
-                        mNodeInterface->sendToMaster((uint8_t *) &pmsg);
+                        mNodeInterface->sendToNode(0, (uint8_t *) &pmsg);
                         if(!mConnected)
                             mLeds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
                     }

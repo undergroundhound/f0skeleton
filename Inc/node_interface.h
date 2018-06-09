@@ -31,7 +31,7 @@ class NodeInterface
 {
     NRF24L01 *mNRF;
     eNodeRoles_t mRole;
-    eNodeStates_t mState;
+    volatile eNodeStates_t mState;
 
     bool mInitialized;
     uint8_t mPayLoadLen;
@@ -40,8 +40,8 @@ class NodeInterface
     uint8_t mNetId;
     uint8_t mRxData[4];
 
-    uint8_t mNodes[MAX_NODES];
-    uint8_t mNodeCount;
+//    uint8_t mNodes[MAX_NODES];
+//    uint8_t mNodeCount;
 
     uint8_t deviceAddr[3] =
     { 0x3E, 0x7C, 0x8D };
@@ -62,12 +62,12 @@ public:
     void listen();
     void irq(uint8_t status);
 
-    HAL_StatusTypeDef pingNodes(uint8_t startAddr, uint8_t endAddr, uint8_t *state);
-    uint8_t getNodes(uint8_t *nodes);
+//    HAL_StatusTypeDef pingNodes(uint8_t startAddr, uint8_t endAddr, uint8_t *state);
+//    uint8_t getNodes(uint8_t *nodes);
 
     HAL_StatusTypeDef sendToNode(uint8_t nodeId, uint8_t *data);
-    HAL_StatusTypeDef sendToNodes(uint8_t *data);
-    HAL_StatusTypeDef sendToMaster(uint8_t *data);
+//    HAL_StatusTypeDef sendToNodes(uint8_t *data);
+//    HAL_StatusTypeDef sendToMaster(uint8_t *data);
 
     uint8_t runRx(uint8_t *data);
     HAL_StatusTypeDef send(uint8_t *data, uint8_t len, uint32_t timeout);

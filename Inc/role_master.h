@@ -12,6 +12,8 @@
 
 class RoleMaster : public Role
 {
+    BiLED2 **leds;
+
     uint32_t nextPoll;
     uint8_t mArmed;
     uint8_t rocketCount;
@@ -21,10 +23,14 @@ class RoleMaster : public Role
     uint8_t rxData[4];
     bool mRxAvailable;
 
-    void checkSlaves();
+    void checkSlaves(uint8_t armed);
+
     void armSlaves(uint8_t armed);
+    uint8_t mNodes[MAX_NODES];
+    uint8_t mNodeCount;
 
     HAL_StatusTypeDef getStatus(uint8_t slave, uint8_t *value);
+    void sendToSlaves(uint8_t *data);
 
 public:
     RoleMaster(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount);

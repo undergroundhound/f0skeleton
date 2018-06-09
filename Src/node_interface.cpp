@@ -11,8 +11,8 @@ NodeInterface::NodeInterface(NRF24L01 *nrfRadio) : mNRF(nrfRadio)
 {
     mInitialized = true;
     mPayLoadLen = 4;
-    mNodeCount = 0;
-    memset(mNodes, 0xFF, MAX_NODES);
+//    mNodeCount = 0;
+//    memset(mNodes, 0xFF, MAX_NODES);
 
     mNetId = 0;
     mId = 0;
@@ -75,38 +75,6 @@ void NodeInterface::listen()
     mNRF->powerUpRx();
 }
 
-HAL_StatusTypeDef NodeInterface::pingNodes(uint8_t startAddr, uint8_t endAddr, uint8_t *state)
-{
-    //if not master
-    if(mId)
-        return HAL_ERROR;
-
-    uint8_t s = 0;
-
-    mNodeCount = 0;
-    memset(mNodes, 0x00, MAX_NODES);
-
-    while(startAddr < endAddr)
-    {
-        uint8_t data[4];
-        memset(data, 0x00, 4);
-        HAL_StatusTypeDef status = sendToNode(startAddr, data);
-        if(status == HAL_TIMEOUT)
-            return HAL_TIMEOUT;
-
-        if(status == HAL_OK)
-        {
-            s |= (1 << mNodeCount);
-            mNodes[mNodeCount++] = startAddr;
-        }
-
-        startAddr++;
-    }
-
-    *state = s;
-    return HAL_OK;
-}
-
 HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t nodeId, uint8_t *data)
 {
     uint8_t devAddr[5];
@@ -121,43 +89,13 @@ HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t nodeId, uint8_t *data)
 
     HAL_Delay(5);
 
-    HAL_StatusTypeDef status = send(data, 4, 50);
+    HAL_StatusTypeDef status = send(data, 4, 10);
+
+    HAL_Delay(5);
 
     mNRF->powerUpRx();
 
     return status;
-}
-
-HAL_StatusTypeDef NodeInterface::sendToNodes(uint8_t *data)
-{
-    //if not master
-    if(mId)
-        return HAL_ERROR;
-
-    for(uint8_t idx = 0; idx < mNodeCount; idx++)
-    {
-        HAL_StatusTypeDef status = sendToNode(mNodes[idx], data);
-        if(status == HAL_TIMEOUT)
-            return HAL_TIMEOUT;
-    }
-
-    return HAL_OK;
-}
-
-HAL_StatusTypeDef NodeInterface::sendToMaster(uint8_t *data)
-{
-    //if master return
-    if(!mId)
-        return HAL_ERROR;
-
-    return sendToNode(0, data);
-}
-
-uint8_t NodeInterface::getNodes(uint8_t *nodes)
-{
-    if(mNodeCount)
-        memcpy(nodes, mNodes, mNodeCount);
-    return mNodeCount;
 }
 
 void NodeInterface::irq(uint8_t status)
