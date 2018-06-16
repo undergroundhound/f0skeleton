@@ -62,7 +62,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-#define VERSION         0x000001
+#define VERSION         0x000002
 
 #define PrintInfo(_info) printf("%15s : ", _info)
 
@@ -86,19 +86,19 @@ DeviceController deviceController = DeviceController();
  * Debug entries
  */
 
-void getIds(uint8_t *netId, uint8_t *id)
+void getIds(uint8_t &netId, uint8_t &id)
 {
     sNvm_t nvm;
     mNVM->get(&nvm);
-    *netId = nvm.netId;
-    *id = nvm.id;
+    netId = nvm.netId;
+    id = nvm.id;
 }
 
 void printId()
 {
     uint8_t id = 0;
     uint8_t netId = 0;
-    getIds(&netId, &id);
+    getIds(netId, id);
     PrintInfo("Network ID");
     printf("0x%02X\n", netId);
     PrintInfo("Device ID");
@@ -143,7 +143,7 @@ int main(void)
     terminal_init();
     printf("Wi-Py welcomes you!\n");
     PrintInfo("Version");
-    printf("%02d.%02d.%02d\n", ((VERSION >> 16) & 0xFF), ((VERSION >> 8) & 0xFF), (VERSION & 0xFF));
+    printf("0x%06X\n", VERSION);
 
     I2C iic = I2C();
     iic.init();
