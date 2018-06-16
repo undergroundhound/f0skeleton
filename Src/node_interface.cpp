@@ -83,15 +83,15 @@ HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t nodeId, uint8_t *data)
     devAddr[4] = nodeId;
 
     mNRF->powerUpTx();
-    HAL_Delay(5);
+    HAL_Delay(1);
     //set payload size to zero
     mNRF->txAddress(devAddr);
 
-    HAL_Delay(5);
+    HAL_Delay(1);
 
     HAL_StatusTypeDef status = send(data, 4, 10);
 
-    HAL_Delay(5);
+    HAL_Delay(1);
 
     mNRF->powerUpRx();
 

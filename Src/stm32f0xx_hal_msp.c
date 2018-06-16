@@ -186,8 +186,6 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
 
 void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
 {
-
-    printf("kom hier\n");
   GPIO_InitTypeDef GPIO_InitStruct;
   if(hadc->Instance==ADC1)
   {
@@ -201,7 +199,6 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
   }
 
 }

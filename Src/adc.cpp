@@ -24,8 +24,6 @@ void cADC::init()
 
     __HAL_RCC_ADC1_CLK_ENABLE();
 
-
-    printf("kom hier\n");
     GPIO_InitTypeDef GPIO_InitStruct;
 
     GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_3 | GPIO_PIN_5 | GPIO_PIN_7;
@@ -36,7 +34,7 @@ void cADC::init()
     /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
      */
     hadc.Instance = ADC1;
-    hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+    hadc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
     hadc.Init.Resolution = ADC_RESOLUTION_12B;
     hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
     hadc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
@@ -49,10 +47,10 @@ void cADC::init()
     hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
     hadc.Init.DMAContinuousRequests = DISABLE;
     hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+    hadc.Init.SamplingTimeCommon = ADC_SAMPLETIME_239CYCLES_5;
     if (HAL_ADC_Init(&hadc) != HAL_OK)
     {
-        printf("fokkop\n");
-        //    _Error_Handler(__FILE__, __LINE__);
+        _Error_Handler(__FILE__, __LINE__);
     }
 
     mInitialized = true;
@@ -73,16 +71,14 @@ uint16_t cADC::sampleChannel(uint32_t channel)
         //calibrate the adc
         HAL_ADCEx_Calibration_Start(&hadc);
 
-        //deselect all channels
-        sConfig.Channel = 0x0;
-        sConfig.Rank = ADC_RANK_NONE;
-        HAL_ADC_ConfigChannel(&hadc, &sConfig);
-
         //configure selected channel
         sConfig.Channel = channel;
-        sConfig.SamplingTime = ADC_SAMPLETIME_71CYCLES_5;
+        sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
         sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
         HAL_ADC_ConfigChannel(&hadc, &sConfig);
+
+        //select the right channel
+        ADC1->CHSELR = (1 << channel);
 
         HAL_ADC_Start(&hadc);
 

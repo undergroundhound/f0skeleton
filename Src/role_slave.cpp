@@ -16,7 +16,7 @@
 RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount), leds(led)
 {
     mArmed = false;
-    mStatus = 0;
+    mStatus = 0x0F;
     mLastTick = 0;
     mConnectionTimeout = 0;
     mConnected = false;
@@ -44,11 +44,12 @@ RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCoun
 
 void RoleSlave::checkConnections()
 {
-    uint8_t channels[4] = { 0x01, 0x04, 0x05, 0x07};
+    uint8_t channels[4] = { ADC_CHANNEL_7, ADC_CHANNEL_5, ADC_CHANNEL_3, ADC_CHANNEL_1};
 
     for(uint8_t idx = 0; idx < 4; idx++)
     {
-        if( mAdc.sampleChannel(channels[idx]) < OUTPUT_OPEN_ADC )
+        uint16_t sample = mAdc.sampleChannel(channels[idx]);
+        if( sample < OUTPUT_OPEN_ADC )
         {
             mLeds[idx+1]->setFlash(LED_FAST_FLASH, LED_RED);
             mStatus |= (1 << idx);
@@ -195,10 +196,6 @@ void RoleSlave::run()
             case PMSG_TYPE_UNKNOWN:
             {
                 mConnectionTimeout = HAL_GetTick() + CON_TIMEOUT;
-//                if(pmsg.tag == 0 && pmsg.data[0] == 0 && pmsg.data[1] == 0)
-//                {
-//                    mNodeInterface->sendToMaster((uint8_t *) &pmsg);
-//                }
             }
                 break;
             case PMSG_TYPE_SET:
@@ -248,6 +245,9 @@ void RoleSlave::run()
                         pmsg.type = PMSG_TYPE_SET;
                         pmsg.data[1] = value;
                         mNodeInterface->sendToNode(0, (uint8_t *) &pmsg);
+
+                        printf("send to node: %d\n", value);
+
                         if(!mConnected)
                             mLeds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
                     }
