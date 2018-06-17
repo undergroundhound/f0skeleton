@@ -68,6 +68,8 @@
 
 /* Private function prototypes -----------------------------------------------*/
 
+IWDG_HandleTypeDef iwdg;
+
 cSPI spi = cSPI();
 cOutput *csn;
 cOutput *ce;
@@ -225,15 +227,24 @@ int main(void)
 
     nrf.powerUpRx();
 
+    iwdg.Instance = IWDG;
+    iwdg.Init.Prescaler = IWDG_PRESCALER_8;
+    iwdg.Init.Reload = 0x0FFF;
+    iwdg.Init.Window = 0x0FFF;
+    HAL_IWDG_Init(&iwdg);
+
     while (1)
     {
+        HAL_IWDG_Refresh(&iwdg);
         static uint8_t ledCount = 0;
         if(ledCount > 4)
             ledCount = 0;
         leds[ledCount++]->run();
-
+        HAL_IWDG_Refresh(&iwdg);
         buttonLaunch->run();
+        HAL_IWDG_Refresh(&iwdg);
         deviceController.run();
+        HAL_IWDG_Refresh(&iwdg);
         terminal_run();
     }
 }
