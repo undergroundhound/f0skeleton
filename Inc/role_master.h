@@ -10,6 +10,8 @@
 
 #include "role.h"
 
+#define NODE_TIMEOUT    2000
+
 class RoleMaster : public Role
 {
     BiLED2 **leds;
@@ -26,10 +28,11 @@ class RoleMaster : public Role
     void checkSlaves(uint8_t armed);
 
     void armSlaves(uint8_t armed);
-    uint8_t mNodes[MAX_NODES];
-    uint8_t mNodeCount;
 
-    HAL_StatusTypeDef getStatus(uint8_t slave, uint8_t *value);
+    uint8_t nodeIdx;
+    uint8_t nodeStatus[MAX_NODES];
+    uint32_t nodeTimeout[MAX_NODES];
+
     void sendToSlaves(uint8_t *data);
 
 public:

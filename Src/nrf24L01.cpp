@@ -116,7 +116,7 @@ HAL_StatusTypeDef NRF24L01::config(uint8_t channel, uint8_t pay_length)
     setRegister(RX_PW_P5, 0x00); // Pipe not used
 
     // 1 Mbps, TX gain: 0dbm
-    setRegister(RF_SETUP, (DATARATE_250kbps << RF_DR) | (POWER_m6dbm << RF_PWR));
+    setRegister(RF_SETUP, (DATARATE_1Mbps << RF_DR) | (POWER_0dbm << RF_PWR));
 
     // CRC enable, 1 byte CRC length
     setRegister(CONFIG, (1<<EN_CRC)|(0<<CRCO));
@@ -146,7 +146,7 @@ void NRF24L01::rxAddress(uint8_t *addr)
 
     mCE->reset();
     writeRegister(RX_ADDR_P1, addr, nrf24_ADDR_LEN);
-//    writeRegister(RX_ADDR_P0, addr, nrf24_ADDR_LEN);
+    writeRegister(RX_ADDR_P0, addr, nrf24_ADDR_LEN);
     mCE->set();
 }
 
@@ -154,9 +154,12 @@ void NRF24L01::txAddress(uint8_t *addr)
 {
     if (!mInitialized)
         return;
+
+    mCE->reset();
     /* RX_ADDR_P0 must be set to the sending addr for auto ack to work. */
     writeRegister(RX_ADDR_P0, addr, nrf24_ADDR_LEN);
     writeRegister(TX_ADDR, addr, nrf24_ADDR_LEN);
+    mCE->reset();
 }
 
 uint8_t NRF24L01::dataReady()
@@ -332,6 +335,8 @@ void NRF24L01::powerUpRx()
 
 void NRF24L01::powerUpTx()
 {
+    flushTx();
+
     setRegister(STATUS, (1 << RX_DR) | (1 << TX_DS) | (1 << MAX_RT));
 
     setRegister(CONFIG, nrf24_CONFIG | ((1 << PWR_UP) | (0 << PRIM_RX)));

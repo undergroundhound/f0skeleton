@@ -10,7 +10,7 @@
 #include "p_msg.h"
 
 #define FIRE_TIME_ON    1000 //1000ms
-#define CON_CHECK_INT   1000
+#define CON_CHECK_INT   200
 #define CON_TIMEOUT     2500
 
 RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount), leds(led)
@@ -42,24 +42,26 @@ RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCoun
     mLeds[0]->setFlash(LED_ON, LED_RED);
 }
 
+uint8_t currConnection;
+uint8_t channels[4] = { ADC_CHANNEL_7, ADC_CHANNEL_5, ADC_CHANNEL_3, ADC_CHANNEL_1};
+
 void RoleSlave::checkConnections()
 {
-    uint8_t channels[4] = { ADC_CHANNEL_7, ADC_CHANNEL_5, ADC_CHANNEL_3, ADC_CHANNEL_1};
+    if(currConnection > 3)
+        currConnection = 0;
 
-    for(uint8_t idx = 0; idx < 4; idx++)
+    uint16_t sample = mAdc.sampleChannel(channels[currConnection]);
+    if( sample < OUTPUT_OPEN_ADC )
     {
-        uint16_t sample = mAdc.sampleChannel(channels[idx]);
-        if( sample < OUTPUT_OPEN_ADC )
-        {
-            mLeds[idx+1]->setFlash(LED_FAST_FLASH, LED_RED);
-            mStatus |= (1 << idx);
-        }
-        else
-        {
-            mLeds[idx+1]->setFlash(LED_ON, LED_GREEN);
-            mStatus &= ~(1 << idx);
-        }
+        mLeds[currConnection+1]->setFlash(LED_FAST_FLASH, LED_RED);
+        mStatus |= (1 << currConnection);
     }
+    else
+    {
+        mLeds[currConnection+1]->setFlash(LED_ON, LED_GREEN);
+        mStatus &= ~(1 << currConnection);
+    }
+    currConnection++;
 }
 
 void RoleSlave::arm(uint8_t state)
@@ -70,10 +72,12 @@ void RoleSlave::arm(uint8_t state)
     if(mArmed)
     {
         printf(RED("ARMED\n"));
+        mLeds[0]->setFlash(LED_FAST_FLASH, LED_RED);
     }
     else
     {
         printf(GREEN("!ARMED\n"));
+        mLeds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
         for(uint8_t idx = 0; idx < 4; idx++)
         {
             outputs[idx]->reset();
@@ -185,17 +189,18 @@ void RoleSlave::run()
         sPmsg_t pmsg;
         memcpy(&pmsg, rxData, 4);
 
-//        HAL_Delay(5);
-        PrintInfo("Slave data in: ");
-        for (uint8_t idx = 0; idx < 4; idx++)
-            printf("%02X ", rxData[idx]);
-        printf("\n");
+//        PrintInfo("Slave data in: ");
+//        for (uint8_t idx = 0; idx < 4; idx++)
+//            printf("%02X ", rxData[idx]);
+//        printf("\n");
 
         switch(pmsg.type)
         {
             case PMSG_TYPE_UNKNOWN:
             {
                 mConnectionTimeout = HAL_GetTick() + CON_TIMEOUT;
+                if(!mArmed)
+                    arm(true);
             }
                 break;
             case PMSG_TYPE_SET:
@@ -207,14 +212,6 @@ void RoleSlave::run()
                     {
                         uint8_t armed = pmsg.data[1];
                         arm(armed);
-                        if(armed)
-                        {
-                            mLeds[0]->setFlash(LED_FAST_FLASH, LED_RED);
-                        }
-                        else
-                        {
-                            mLeds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
-                        }
                     }
                     break;
                     case PMSG_TAG_FIRE:
@@ -246,10 +243,11 @@ void RoleSlave::run()
                         pmsg.data[1] = value;
                         mNodeInterface->sendToNode(0, (uint8_t *) &pmsg);
 
-                        printf("send to node: %d\n", value);
-
                         if(!mConnected)
+                        {
+                            mConnected = true;
                             mLeds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
+                        }
                     }
                     break;
                     default:

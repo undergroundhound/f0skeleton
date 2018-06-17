@@ -77,15 +77,15 @@ void NodeInterface::listen()
 
 HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t nodeId, uint8_t *data)
 {
-    uint8_t devAddr[5];
-    memcpy(devAddr, deviceAddr, 3);
-    devAddr[3] = mNetId;
-    devAddr[4] = nodeId;
+//    printf(GREEN("\n\nsend to node %02d    "), nodeId);
+//      for(uint8_t idx = 0; idx < 4; idx++)
+//          printf("%02X ", data[idx]);
+//      printf("\n");
 
-    mNRF->powerUpTx();
+    mNRF->powerDown();
     HAL_Delay(1);
-    //set payload size to zero
-    mNRF->txAddress(devAddr);
+
+    setTxIds(mNetId, nodeId);
 
     HAL_Delay(1);
 
@@ -93,6 +93,8 @@ HAL_StatusTypeDef NodeInterface::sendToNode(uint8_t nodeId, uint8_t *data)
 
     HAL_Delay(1);
 
+    mNRF->powerDown();
+    mNRF->flushRx();
     mNRF->powerUpRx();
 
     return status;
@@ -140,6 +142,8 @@ uint8_t NodeInterface::runRx(uint8_t *data)
 
     mDataAvailable = false;
     memcpy(data, mRxData, NRF24_DATA_LEN);
+    mNRF->flushTx();
+    mNRF->flushRx();
     return 1;
 }
 
@@ -147,6 +151,9 @@ HAL_StatusTypeDef NodeInterface::send(uint8_t *data, uint8_t len, uint32_t timeo
 {
     if(len != 4)
         return HAL_ERROR;
+
+//    mNRF->flushTx();
+//    mNRF->flushRx();
 
     sNodeObj_t obj;
     mCurrObj = &obj;
