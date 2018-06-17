@@ -10,9 +10,26 @@
 
 #include "role.h"
 
+#define POLL_INTERVAL   500
+#define POLL_TIMEOUT    200
+
+typedef enum{
+    MASTER_IDLE,
+    MASTER_POLL,
+    MASTER_WAIT,
+    MASTER_RECEIVED_FB
+}eMasterState_t;
+
+typedef struct{
+    uint8_t id;
+    uint8_t status;
+}sNode_t;
+
 class RoleMaster : public Role
 {
     BiLED2 **leds;
+
+    eMasterState_t mState;
 
     uint32_t nextPoll;
     uint8_t mArmed;
@@ -23,13 +40,16 @@ class RoleMaster : public Role
     uint8_t rxData[4];
     bool mRxAvailable;
 
-    void checkSlaves(uint8_t armed);
-
     void armSlaves(uint8_t armed);
-    uint8_t mNodes[MAX_NODES];
+
+    sNode_t tempNodes[2];
+    uint8_t nodesFound;
+    uint8_t pollcount;
+
+    sNode_t mNodes[MAX_NODES];
     uint8_t mNodeCount;
 
-    HAL_StatusTypeDef getStatus(uint8_t slave, uint8_t *value);
+    HAL_StatusTypeDef requestStatus(uint8_t slave);
     void sendToSlaves(uint8_t *data);
 
 public:
@@ -37,6 +57,7 @@ public:
 
     void debug(uint8_t argc, char **argv);
     void buttonCallback(uint8_t state);
+    void runStates();
     void run();
 };
 

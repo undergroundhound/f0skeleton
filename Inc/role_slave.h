@@ -23,7 +23,6 @@ class RoleSlave : public Role
     uint8_t mStatus;
     uint32_t mLastTick;
     uint32_t mConnectionTimeout;
-    bool mConnected;
 
     void arm(uint8_t state);
 

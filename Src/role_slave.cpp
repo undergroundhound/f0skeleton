@@ -11,7 +11,7 @@
 
 #define FIRE_TIME_ON    1000 //1000ms
 #define CON_CHECK_INT   1000
-#define CON_TIMEOUT     2500
+#define CON_TIMEOUT     4000
 
 RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount), leds(led)
 {
@@ -19,7 +19,6 @@ RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCoun
     mStatus = 0x0F;
     mLastTick = 0;
     mConnectionTimeout = 0;
-    mConnected = false;
 
     out1.reset();
     outputs[0] = &out1;
@@ -161,11 +160,12 @@ void RoleSlave::run()
 
     if(HAL_GetTick() > mConnectionTimeout)
     {
+        mConnectionTimeout = HAL_GetTick() + CON_TIMEOUT;
+        printf("connection fail\n");
         //nie meer connected nie.
         if(mArmed)
             mArmed = false;
 
-        mConnected = false;
         leds[0]->setFlash(LED_ON, LED_RED);
     }
 
@@ -185,7 +185,6 @@ void RoleSlave::run()
         sPmsg_t pmsg;
         memcpy(&pmsg, rxData, 4);
 
-//        HAL_Delay(5);
         PrintInfo("Slave data in: ");
         for (uint8_t idx = 0; idx < 4; idx++)
             printf("%02X ", rxData[idx]);
@@ -206,6 +205,7 @@ void RoleSlave::run()
                     case PMSG_TAG_ARM:
                     {
                         uint8_t armed = pmsg.data[1];
+                        printf("armed: %d\n", armed);
                         arm(armed);
                         if(armed)
                         {
@@ -241,15 +241,22 @@ void RoleSlave::run()
                 switch (pmsg.tag) {
                     case PMSG_TAG_STATUS:
                     {
+                        if(pmsg.data[1] == 1)
+                        {
+                            leds[0]->setFlash(LED_FAST_FLASH, LED_RED);
+                            mArmed = true;
+                        }
+                        else
+                        {
+                            leds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
+                            mArmed = false;
+                        }
+
                         uint8_t value = mStatus;
                         pmsg.type = PMSG_TYPE_SET;
                         pmsg.data[1] = value;
                         mNodeInterface->sendToNode(0, (uint8_t *) &pmsg);
 
-                        printf("send to node: %d\n", value);
-
-                        if(!mConnected)
-                            mLeds[0]->setFlash(LED_HEARTBEAT, LED_GREEN);
                     }
                     break;
                     default:

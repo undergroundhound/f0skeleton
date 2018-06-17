@@ -116,7 +116,7 @@ HAL_StatusTypeDef NRF24L01::config(uint8_t channel, uint8_t pay_length)
     setRegister(RX_PW_P5, 0x00); // Pipe not used
 
     // 1 Mbps, TX gain: 0dbm
-    setRegister(RF_SETUP, (DATARATE_250kbps << RF_DR) | (POWER_m6dbm << RF_PWR));
+    setRegister(RF_SETUP, (DATARATE_1Mbps << RF_DR) | (POWER_0dbm << RF_PWR));
 
     // CRC enable, 1 byte CRC length
     setRegister(CONFIG, (1<<EN_CRC)|(0<<CRCO));
@@ -328,6 +328,7 @@ void NRF24L01::powerUpRx()
     mCE->reset();
     setRegister(CONFIG, nrf24_CONFIG | ((1 << PWR_UP) | (1 << PRIM_RX)));
     mCE->set();
+    flushRx();
 }
 
 void NRF24L01::powerUpTx()

@@ -52,6 +52,8 @@ class NodeInterface
     sNodeObj_t *mCurrObj;
     volatile bool mDataAvailable;
 
+    volatile bool sending;
+    volatile bool sendstatus;
 public:
     NodeInterface(NRF24L01 *nrfRadio);
     virtual ~NodeInterface();
