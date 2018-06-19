@@ -62,7 +62,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-#define VERSION         0x000003
+#define VERSION         0x000004
 
 #define PrintInfo(_info) printf("%15s : ", _info)
 

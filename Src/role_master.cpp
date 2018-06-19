@@ -37,10 +37,11 @@ void RoleMaster::sendToSlaves(uint8_t *data)
 {
     for(uint8_t idx = 0; idx < MAX_NODES; idx++)
     {
-        if(nodeStatus[idx] == 0xFF)
-            return;
+        if(nodeStatus[idx] != 0xFF)
+        {
+            mNodeInterface->sendToNode(idx+1, data);
+        }
 //        printf("send to: %d\n", idx+1);
-        mNodeInterface->sendToNode(idx+1, data);
     }
 }
 
