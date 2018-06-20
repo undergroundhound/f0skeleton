@@ -29,12 +29,10 @@ void Button::setCb(void (*callback)(uint8_t state))
 
 void Button::irq()
 {
-    mDebounce = 0;
-
-    if(HAL_GetTick() < mDebounce)
+    if(mDebounce && (HAL_GetTick() < mDebounce))
         return;
 
-    mDebounce = HAL_GetTick() + 300;
+    mDebounce = HAL_GetTick() + 1000;
 
     if (HW_GPIO_Read(mGpio, mPin) == RESET)
     {
