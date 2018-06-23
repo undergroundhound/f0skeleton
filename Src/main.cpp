@@ -62,7 +62,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-#define VERSION         0x000005
+#define VERSION         0x000007
 
 #define PrintInfo(_info) printf("%15s : ", _info)
 
@@ -130,6 +130,49 @@ void buttonPress(uint8_t state)
     deviceController.buttonCB(state);
 }
 
+void resetSource()
+{
+    PrintInfo("Reset");
+    if(READ_BIT(RCC->CSR, RCC_CSR_LPWRRSTF))
+        printf("Low-power\n");
+    if(READ_BIT(RCC->CSR, RCC_CSR_WWDGRSTF))
+        printf("Window watchdog\n");
+    if(READ_BIT(RCC->CSR, RCC_CSR_IWDGRSTF))
+        printf("Independent Window watchdog\n");
+    if(READ_BIT(RCC->CSR, RCC_CSR_SFTRSTF))
+        printf("Software reset\n");
+    if(READ_BIT(RCC->CSR, RCC_CSR_PORRSTF))
+        printf("POR/PDR on\n");
+    if(READ_BIT(RCC->CSR, RCC_CSR_PINRSTF))
+        printf("Pin\n");
+    //   if(READ_BIT(RCC->CSR, RCC_CSR_FWRSTF))
+    //      printf("Reset        : Firewall\n");
+    if(READ_BIT(RCC->CSR, RCC_CSR_OBLRSTF))
+        printf("Options bytes load\n");
+
+    SET_BIT(RCC->CSR, RCC_CSR_RMVF);
+}
+
+
+void init_slaveOutputs()
+{
+    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_4 | GPIO_PIN_2;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_0;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+    cOutput out1 = cOutput(GPIOB, GPIO_PIN_0);
+}
 
 int main(void)
 {
@@ -141,11 +184,13 @@ int main(void)
 
     /* Initialize all configured peripherals */
     HW_GPIO_ClockEnable();
+    init_slaveOutputs();
 
     terminal_init();
     printf("Wi-Py welcomes you!\n");
     PrintInfo("Version");
     printf("0x%06X\n", VERSION);
+    resetSource();
 
     I2C iic = I2C();
     iic.init();
