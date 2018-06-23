@@ -13,6 +13,8 @@
 #define CON_CHECK_INT   200
 #define CON_TIMEOUT     2500
 
+extern cOutput *slaveOutputs[4];
+
 RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount), leds(led)
 {
     mArmed = false;
@@ -21,20 +23,16 @@ RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCoun
     mConnectionTimeout = 0;
     mConnected = false;
 
-    out1.reset();
-    outputs[0] = &out1;
+    outputs[0] = slaveOutputs[0];
     timeOuts[0] = 0;
 
-    out2.reset();
-    outputs[1] = &out2;
+    outputs[1] = slaveOutputs[1];
     timeOuts[1] = 0;
 
-    out3.reset();
-    outputs[2] = &out3;
+    outputs[2] = slaveOutputs[2];
     timeOuts[2] = 0;
 
-    out4.reset();
-    outputs[3] = &out4;
+    outputs[3] = slaveOutputs[3];
     timeOuts[3] = 0;
 
     mAdc.init();

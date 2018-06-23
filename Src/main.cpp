@@ -62,7 +62,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-#define VERSION         0x000005
+#define VERSION         0x000006
 
 #define PrintInfo(_info) printf("%15s : ", _info)
 
@@ -83,6 +83,7 @@ Button *buttonLaunch;
 
 DeviceController deviceController = DeviceController();
 
+cOutput *slaveOutputs[4];
 
 /*!
  * Debug entries
@@ -130,7 +131,6 @@ void buttonPress(uint8_t state)
     deviceController.buttonCB(state);
 }
 
-
 int main(void)
 {
     /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -141,6 +141,24 @@ int main(void)
 
     /* Initialize all configured peripherals */
     HW_GPIO_ClockEnable();
+
+    // initialize the slave outputs
+    cOutput out1 = cOutput(GPIOB, GPIO_PIN_0);
+    out1.reset();
+    slaveOutputs[0] = &out1;
+
+    cOutput out2 = cOutput(GPIOA, GPIO_PIN_6);
+    out2.reset();
+    slaveOutputs[1] = &out2;
+
+    cOutput out3 = cOutput(GPIOA, GPIO_PIN_4);
+    out3.reset();
+    slaveOutputs[2] = &out3;
+
+    cOutput out4 = cOutput(GPIOA, GPIO_PIN_2);
+    out4.reset();
+    slaveOutputs[3] = &out4;
+
 
     terminal_init();
     printf("Wi-Py welcomes you!\n");
