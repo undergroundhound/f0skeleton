@@ -13,7 +13,7 @@ cOutput::cOutput(GPIO_TypeDef *port, uint32_t pin)
 	GPIO_InitStruct.Pin = pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 	HAL_GPIO_Init(port, &GPIO_InitStruct);
 
 	mPort = port;

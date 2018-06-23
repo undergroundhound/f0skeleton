@@ -30,6 +30,11 @@ class RoleSlave : public Role
     cOutput *outputs[4];
     uint32_t timeOuts[4];
 
+
+    cOutput out1 = cOutput(GPIOB, GPIO_PIN_0);
+    cOutput out2 = cOutput(GPIOA, GPIO_PIN_6);
+    cOutput out3 = cOutput(GPIOA, GPIO_PIN_4);
+    cOutput out4 = cOutput(GPIOA, GPIO_PIN_2);
     cADC mAdc;
 
     void checkConnections();
