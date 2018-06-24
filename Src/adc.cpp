@@ -72,7 +72,7 @@ uint16_t cADC::sampleChannel(uint32_t channel)
         HAL_ADCEx_Calibration_Start(&hadc);
 
         //configure selected channel
-        sConfig.Channel = channel;
+//        sConfig.Channel = 0;
         sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
         sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
         HAL_ADC_ConfigChannel(&hadc, &sConfig);

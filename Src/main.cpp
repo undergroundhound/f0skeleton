@@ -62,7 +62,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-#define VERSION         0x000007
+#define VERSION         0x000008
 
 #define PrintInfo(_info) printf("%15s : ", _info)
 
@@ -142,8 +142,8 @@ void resetSource()
         printf("Software reset\n");
     if(READ_BIT(RCC->CSR, RCC_CSR_PORRSTF))
         printf("POR/PDR on\n");
-    if(READ_BIT(RCC->CSR, RCC_CSR_PINRSTF))
-        printf("Pin\n");
+//    if(READ_BIT(RCC->CSR, RCC_CSR_PINRSTF))
+//        printf("Pin\n");
     //   if(READ_BIT(RCC->CSR, RCC_CSR_FWRSTF))
     //      printf("Reset        : Firewall\n");
     if(READ_BIT(RCC->CSR, RCC_CSR_OBLRSTF))
@@ -158,7 +158,7 @@ void init_slaveOutputs()
     GPIO_InitTypeDef GPIO_InitStruct;
     GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_4 | GPIO_PIN_2;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -170,7 +170,6 @@ void init_slaveOutputs()
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
-    cOutput out1 = cOutput(GPIOB, GPIO_PIN_0);
 }
 
 int main(void)
