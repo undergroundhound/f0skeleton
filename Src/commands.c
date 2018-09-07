@@ -9,6 +9,7 @@ extern const sTermEntry_t netIdEntry;
 extern const sTermEntry_t idEntry;
 extern const sTermEntry_t channelEntry;
 extern const sTermEntry_t nrfEntry;
+extern const sTermEntry_t adcEntry;
 
 const sTermEntry_t *term_entries[] =
 {
@@ -20,5 +21,6 @@ const sTermEntry_t *term_entries[] =
         &netIdEntry,
         &channelEntry,
         &nrfEntry,
+        &adcEntry,
         0
 };

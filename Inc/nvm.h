@@ -17,7 +17,8 @@
 typedef struct{
 	uint8_t netId;      //1
 	uint8_t id;         //2
-	uint8_t channel;    //2
+	uint8_t channel;    //3
+	uint16_t adc;       //4-5
 }sNvm_t;
 
 class NVM {

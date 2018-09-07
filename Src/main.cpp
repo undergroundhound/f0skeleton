@@ -62,9 +62,11 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-#define VERSION         0x000008
+#define VERSION         0x00000A
 
 #define PrintInfo(_info) printf("%15s : ", _info)
+
+uint16_t openAdcValue = 100;
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -112,6 +114,14 @@ void printChannel()
     mNVM->get(&nvm);
     PrintInfo("WiFi Channel");
     printf("0x%02X\n", nvm.channel);
+}
+
+void printOpenAdcValue()
+{
+    sNvm_t nvm;
+    mNVM->get(&nvm);
+    PrintInfo("ADC open value");
+    printf("%d\n", nvm.adc);
 }
 
 void nrfIrq(void)
@@ -230,8 +240,10 @@ int main(void)
 
         printId();
         printChannel();
-    }
+        openAdcValue = nvm.adc;
+        printOpenAdcValue();
 
+    }
 
     nodeInterface->listen();
 
@@ -291,6 +303,36 @@ int main(void)
         terminal_run();
     }
 }
+
+void adc(uint8_t argc, char **argv)
+{
+    if (argc == 1)
+    {
+        printOpenAdcValue();
+        return;
+    }
+
+    if (argc != 2)
+        return;
+
+    sNvm_t nvm;
+    mNVM->get(&nvm);
+
+    int a = atoi(argv[1]);
+
+    if ((a < 0) || (a > 4095))
+    {
+        printf("0 < id < 4095\n");
+        return;
+    }
+    openAdcValue = a;
+    nvm.adc = (uint16_t)a;
+    mNVM->set(&nvm);
+    printf("set adc %d\n", a);
+}
+sTermEntry_t adcEntry =
+{ "adc", "Set ADC output", adc };
+
 
 void Id(uint8_t argc, char **argv)
 {

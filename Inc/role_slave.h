@@ -12,7 +12,7 @@
 
 #include "adc.h"
 
-#define OUTPUT_OPEN_ADC     100
+//#define OUTPUT_OPEN_ADC     100
 
 class RoleSlave : public Role
 {

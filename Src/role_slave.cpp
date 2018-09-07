@@ -13,6 +13,10 @@
 #define CON_CHECK_INT   200
 #define CON_TIMEOUT     2500
 
+uint8_t currConnection;
+uint8_t channels[4] = { ADC_CHANNEL_7, ADC_CHANNEL_5, ADC_CHANNEL_3, ADC_CHANNEL_1};
+extern uint16_t openAdcValue;
+
 RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCount) : Role(nodeInterface, led, ledCount), leds(led)
 {
     mArmed = false;
@@ -42,8 +46,6 @@ RoleSlave::RoleSlave(NodeInterface *nodeInterface, BiLED2 **led, uint8_t ledCoun
     mLeds[0]->setFlash(LED_ON, LED_RED);
 }
 
-uint8_t currConnection;
-uint8_t channels[4] = { ADC_CHANNEL_7, ADC_CHANNEL_5, ADC_CHANNEL_3, ADC_CHANNEL_1};
 
 void RoleSlave::checkConnections()
 {
@@ -51,7 +53,8 @@ void RoleSlave::checkConnections()
         currConnection = 0;
 
     uint16_t sample = mAdc.sampleChannel(channels[currConnection]);
-    if( sample < OUTPUT_OPEN_ADC )
+//    printf("chan: %d adc = %d\n", currConnection, sample);
+    if( sample < openAdcValue )
     {
         mLeds[currConnection+1]->setFlash(LED_FAST_FLASH, LED_RED);
         mStatus |= (1 << currConnection);
