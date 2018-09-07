@@ -62,7 +62,9 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-#define VERSION         0x00000A
+#define VERSION_MAJOR   0
+#define VERSION_MINOR   1
+#define VERSION_FIX     0
 
 #define PrintInfo(_info) printf("%15s : ", _info)
 
@@ -72,7 +74,7 @@ uint16_t openAdcValue = 100;
 
 IWDG_HandleTypeDef iwdg;
 
-cSPI spi = cSPI();
+static cSPI spi = cSPI();
 cOutput *csn;
 cOutput *ce;
 
@@ -197,7 +199,8 @@ int main(void)
     terminal_init();
     printf("Wi-Py welcomes you!\n");
     PrintInfo("Version");
-    printf("0x%06X\n", VERSION);
+    printf("%02d.%02d.%02d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_FIX);
+
     resetSource();
 
     I2C iic = I2C();
@@ -248,20 +251,20 @@ int main(void)
     nodeInterface->listen();
 
     /* Initialize the LEDs */
-    cOutput led1green(GPIOA, GPIO_PIN_12);
-    cOutput led1red(GPIOA, GPIO_PIN_13);
+    cOutput led1red(GPIOA, GPIO_PIN_12);
+    cOutput led1green(GPIOA, GPIO_PIN_13);
 
-    cOutput led2green(GPIOF, GPIO_PIN_6);
-    cOutput led2red(GPIOF, GPIO_PIN_7);
+    cOutput led2red(GPIOF, GPIO_PIN_6);
+    cOutput led2green(GPIOF, GPIO_PIN_7);
 
-    cOutput led3green(GPIOA, GPIO_PIN_14);
-    cOutput led3red(GPIOA, GPIO_PIN_15);
+    cOutput led3red(GPIOA, GPIO_PIN_14);
+    cOutput led3green(GPIOA, GPIO_PIN_15);
 
-    cOutput led4green(GPIOB, GPIO_PIN_3);
-    cOutput led4red(GPIOB, GPIO_PIN_4);
+    cOutput led4red(GPIOB, GPIO_PIN_3);
+    cOutput led4green(GPIOB, GPIO_PIN_4);
 
-    cOutput led5green(GPIOB, GPIO_PIN_5);
-    cOutput led5red(GPIOB, GPIO_PIN_6);
+    cOutput led5red(GPIOB, GPIO_PIN_5);
+    cOutput led5green(GPIOB, GPIO_PIN_6);
 
     BiLED2 *leds[5];
     leds[0] = new BiLED2(&led1green, &led1red);
