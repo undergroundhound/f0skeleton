@@ -55,7 +55,7 @@ void Button::run()
             return;
         }
 
-        if((HAL_GetTick() - timeDown)  > 750)
+        if((HAL_GetTick() - timeDown)  > 4000)
         {
 //            printf("long press\n");
             shortPress = 0;

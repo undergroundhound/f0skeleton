@@ -64,7 +64,7 @@
 
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   1
-#define VERSION_FIX     0
+#define VERSION_FIX     1
 
 #define PrintInfo(_info) printf("%15s : ", _info)
 
