@@ -64,7 +64,7 @@
 
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   1
-#define VERSION_FIX     1
+#define VERSION_FIX     2
 
 #define PrintInfo(_info) printf("%15s : ", _info)
 
@@ -267,11 +267,23 @@ int main(void)
     cOutput led5green(GPIOB, GPIO_PIN_6);
 
     BiLED2 *leds[5];
-    leds[0] = new BiLED2(&led1green, &led1red);
-    leds[1] = new BiLED2(&led2green, &led2red);
-    leds[2] = new BiLED2(&led3green, &led3red);
-    leds[3] = new BiLED2(&led4green, &led4red);
-    leds[4] = new BiLED2(&led5green, &led5red);
+    /* LEDs are inverted for master*/
+    if(nodeInterface->getRole() == NODE_ROLE_SLAVE)
+    {
+        leds[0] = new BiLED2(&led1green, &led1red);
+        leds[1] = new BiLED2(&led2green, &led2red);
+        leds[2] = new BiLED2(&led3green, &led3red);
+        leds[3] = new BiLED2(&led4green, &led4red);
+        leds[4] = new BiLED2(&led5green, &led5red);
+    }
+    else
+    {
+        leds[0] = new BiLED2(&led1red, &led1green);
+        leds[1] = new BiLED2(&led2red, &led2green);
+        leds[2] = new BiLED2(&led3red, &led3green);
+        leds[3] = new BiLED2(&led4red, &led4green);
+        leds[4] = new BiLED2(&led5red, &led5green);
+    }
 
 
     leds[0]->setFlash(LED_OFF, LED_RED);
